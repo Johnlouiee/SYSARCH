@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
     $stmt->bind_param("sssssssss", $idno, $lastname, $firstname, $middlename, $course, $year, $email, $username, $hashed_password);
 
     if ($stmt->execute()) {
-        echo "<script>alert('User Created');</script>";
+        echo "<script>alert('User Created'); </script>";
         header('location:index.php');
     } else {
         echo "Error: " . $stmt->error;
@@ -113,16 +113,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
         background-color: #45a049;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
-
-    .back-btn {
-        background-color: #dc3545;
-        margin-top: 20px;
-    }
-
-    .back-btn:hover {
-        background-color: #c82333;
-    }
-
     .arrow-icon {
         font-size: 20px; 
         margin-left: 10px;
