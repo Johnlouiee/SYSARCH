@@ -1,5 +1,6 @@
 <?php
 session_start();
+<<<<<<< HEAD
 require 'db_connect.php';
 
 if (!isset($_SESSION['user_info']['idno'])) {
@@ -50,6 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $stmt->close();
 }
+=======
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
 ?>
 
 <!DOCTYPE html>
@@ -58,8 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit</title>
+<<<<<<< HEAD
 
 <style>
+=======
+    <style>
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
   .card {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     max-width: 400px;
@@ -78,7 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     max-height: 100vh;
     overflow-y: auto;
     margin: 0 auto;
+<<<<<<< HEAD
     text-align: left; 
+=======
+    text-align: left; /* Added to align text elements to the left */
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
   }
 
   input[type="text"]:focus,
@@ -93,8 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   input[type="text"],
   input[type="password"],
   select {
+<<<<<<< HEAD
     width: calc(100% - 40px); 
     padding: 15px 20px; 
+=======
+    width: calc(100% - 40px); /* Adjusted width for padding consistency */
+    padding: 15px 20px; /* Reduced padding to avoid overflow */
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
     margin: 15px 0;
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -178,10 +194,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <label for="email">Email Address</label>
         <input type="text" id="email" name="email" required><br>
 
+<<<<<<< HEAD
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required><br>
 
         <label for="password">Confirm Password</label>
+=======
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required><br>
+
+        <label for="password">Password</label>
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
         <input type="password" id="password" name="password" required><br>
 
         <button class="back-btn" type="submit" name="create">Edit</button><br><br>

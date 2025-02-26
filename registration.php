@@ -21,9 +21,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
     $stmt->bind_param("sssssssss", $idno, $lastname, $firstname, $middlename, $course, $year, $email, $hashed_password, $role);
 
     if ($stmt->execute()) {
+<<<<<<< HEAD
         header("Location: index.php"); 
         echo "<script> alert('User Created');</script>";
 
+=======
+        echo "<script>alert('User Created'); </script>";
+        header('location:index.php');
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
     } else {
         echo "Error: " . $stmt->error;
     }
@@ -40,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration</title>
     <style>
+<<<<<<< HEAD
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -82,6 +88,88 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
             display: none;
         }
     </style>
+=======
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #e9ecef;
+        overflow: hidden; 
+    }
+
+    .form-container {
+        background-color: #fff;
+        padding: 25px 45px;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        max-height: 90vh; 
+        overflow-y: auto; 
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    input[type="text"], input[type="password"], select {
+        width: 100%;
+        padding: 12px 10px;
+        margin: 15px 0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        background-color: #f9f9f9;
+    }
+
+    input[type="text"]:focus, input[type="password"]:focus, select:focus {
+        border-color: #4CAF50;
+        outline: none;
+        background-color: #fff;
+        box-shadow: 0 0 6px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn, .back-btn {
+        font-size: 20px;
+        font-weight: bold;
+        padding: 15px 0;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 8px;
+        width: 100%;
+        transition: background-color 0.3s ease;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        margin-top: 10px;
+    }
+
+    .btn:hover, .back-btn:hover {
+        background-color: #45a049;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .arrow-icon {
+        font-size: 20px; 
+        margin-left: 10px;
+    }
+
+    label {
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+        display: block;
+        margin-bottom: 5px;
+    }
+</style>
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
 </head>
 <body>
 

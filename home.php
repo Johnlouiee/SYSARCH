@@ -11,15 +11,18 @@ if (!isset($_SESSION['idno'])) {
 }
 
 session_regenerate_id(true);
+<<<<<<< HEAD
 
 if (!isset($_SESSION['user_info']['sessions'])) {
     $_SESSION['user_info']['sessions'] = 30; 
 }
 
 $idno = htmlspecialchars($_SESSION['idno']);
+=======
+$username = htmlspecialchars($_SESSION['username']);
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
 $user_info = $_SESSION['user_info'];
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,7 +146,11 @@ $user_info = $_SESSION['user_info'];
             <a href="reservation.php">Reservation</a>
         </div>
         <div>
+<<<<<<< HEAD
             <span>Welcome, <?php echo $idno ; ?>!</span>
+=======
+            <span>Welcome, <?php echo $username; ?>!</span>
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
             <a href="logout.php" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
         </div>
     </div>
@@ -161,7 +168,10 @@ $user_info = $_SESSION['user_info'];
                     <p><strong>Course:</strong> <?php echo $user_info['course']; ?></p>
                     <p><strong>Year Level:</strong> <?php echo $user_info['year']; ?></p>
                     <p><strong>Email:</strong> <?php echo $user_info['email']; ?></p>
+<<<<<<< HEAD
                     <p><strong>Sessions:</strong> <?php echo $user_info['sessions']; ?></p>
+=======
+>>>>>>> 3ae84d6776b12f223043370486462e3efd84e342
                 </div>
             </div>
         </div>
