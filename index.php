@@ -1,22 +1,14 @@
 <?php
+session_start();
+include 'db_connect.php';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
-    $username = $_POST["username"];
+    $idno = $_POST["idno"];
     $password = $_POST["password"];
 
-    $servername = "localhost";
-    $dbusername = "root";
-    $dbpassword = ""; 
-    $dbname = "my_database";
-
-    $conn = new mysqli($servername, $dbusername, $dbpassword, $dbname);
-
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    $sql = "SELECT * FROM users WHERE username = ?";
+    $sql = "SELECT * FROM users WHERE idno = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("s", $idno);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -24,23 +16,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
         $row = $result->fetch_assoc();
        
         if (password_verify($password, $row['password_hash'])) {
-            session_start();
-            $_SESSION['username'] = $username;
+            $_SESSION['idno'] = $idno;
             $_SESSION['user_info'] = $row; 
-           
-            header("Location: home.php");
-            exit();
+            
+          
+            if ($row['role'] == 'admin') {
+                echo 'Redirecting to admin_home.php';
+                header("Location: admin_home.php");
+            } else {
+                echo 'Redirecting to home.php';
+                header("Location: home.php");
+            }
+            exit();            
         } else {
-            $error_message = "Invalid username or password!";
+            $error_message = "Invalid Idno or password!";
         }
     } else {
-        $error_message = "No user found with that username!";
+        $error_message = "No user found with that Idno!";
     }
 
     $stmt->close();
     $conn->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -134,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
     <div class="form-container">
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
             <label>Username</label>
-            <input type="text" placeholder="Username" name="username" required><br>
+            <input type="text" placeholder="Username" name="idno" required><br>
             <label>Password</label>
             <input type="password" placeholder="Password" name="password" required><br>
             <button type="submit" name="create">Login</button><br><br>
