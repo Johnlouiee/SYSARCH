@@ -64,19 +64,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             height: 100vh;
         }
 
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+
+        .header a:hover {
+            text-decoration: underline;
+        }
+
         .form-container {
             background-color: #fff;
-            padding: 30px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width:600px;
-            border: 2px solid #4CAF50; 
+            width: 90%;
+            max-width: 600px;
+            border: 2px solid #4CAF50;
+            margin-top: 80px; /* Space for the header */
         }
 
         .profile-card {
@@ -88,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             width: 100px;
             height: 100px;
             border-radius: 10%;
-            border: 3px solid red; 
+            border: 3px solid red;
         }
 
         .profile-card h3 {
@@ -114,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-weight: bold;
             color: #333;
             display: block;
-            margin-bottom: auto;
+            margin-bottom: 5px;
         }
 
         .form-container input[type="text"],
@@ -127,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 5px;
             font-size: 14px;
             background-color: #f9f9f9;
+            box-sizing: border-box; /* Ensure padding is included in width */
         }
 
         .form-container input[type="text"]:focus,
@@ -162,12 +188,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            width: 30%;
+            width: 100%;
             margin-top: 10px;
-            transition: background-color 0.3s ease;
             text-align: center;
             text-decoration: none;
             display: block;
+            transition: background-color 0.3s ease;
         }
 
         .form-container .back-btn:hover {
@@ -176,15 +202,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body>
-    <div class="form-container">
-   
-    <a class="back-btn" href="home.php">Go Back</a>
 
+    <div class="header">
+        <a href="home.php">Home</a>
+        <a href="reports.php">Reports</a>
+        <a href="editprofile.php">Edit Profile</a>
+        <a href="view_announcements.php">View Announcement</a>
+        <a href="reservation.php">Reservation</a>
+        <a href="sitin.php">Sit-In History</a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
         <div class="profile-card">
             <img src="ok.jpg" alt="Profile Image">
         </div>
 
-  
         <h2>Edit Profile</h2>
         <form action="editprofile.php" method="POST">
             <label for="idno">IDNO</label>

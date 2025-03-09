@@ -5,6 +5,8 @@ session_start([
     'cookie_httponly' => true,
 ]);
 
+include 'db_connect.php'; // Include the database connection
+
 if (!isset($_SESSION['idno'])) {
     header("Location: index.php");
     exit();
@@ -12,36 +14,101 @@ if (!isset($_SESSION['idno'])) {
 
 session_regenerate_id(true);
 
-// Initialize session count if not set
-if (!isset($_SESSION['user_info']['sessions'])) {
-    $_SESSION['user_info']['sessions'] = 30; // Default session count
+// Fetch user information from the database
+$idno = $_SESSION['idno'];
+$sql = "SELECT * FROM users WHERE idno = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $idno);
+$stmt->execute();
+$result = $stmt->get_result();
+$user_info = $result->fetch_assoc();
+$stmt->close();
+
+// Initialize or refresh session count
+$session_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
+$session_count_stmt = $conn->prepare($session_count_sql);
+if ($session_count_stmt) {
+    $session_count_stmt->bind_param("s", $user_info['idno']);
+    $session_count_stmt->execute();
+    $session_count_result = $session_count_stmt->get_result();
+    $session_count_row = $session_count_result->fetch_assoc();
+
+    $_SESSION['user_info']['sessions'] = $session_count_row['sessions_remaining'] ?? 30; // Default to 30
+    $session_count_stmt->close();
 }
 
-// Handle session start
+// Start session logic
 if (isset($_POST['start_session'])) {
     if ($_SESSION['user_info']['sessions'] > 0) {
+        // Insert new session record
+        $insert_session_sql = "INSERT INTO user_sessions (user_id, session_start) VALUES (?, NOW())";
+        $insert_stmt = $conn->prepare($insert_session_sql);
+        if ($insert_stmt) {
+            $insert_stmt->bind_param("s", $user_info['id']);
+            $insert_stmt->execute();
+            $insert_stmt->close();
+        } else {
+            die("Error preparing statement: " . $conn->error);
+        }
+
+        // Decrement session count in database
+        $decrement_sql = "UPDATE users SET sessions_remaining = sessions_remaining - 1 WHERE idno = ?";
+        $decrement_stmt = $conn->prepare($decrement_sql);
+        if ($decrement_stmt) {
+            $decrement_stmt->bind_param("s", $user_info['idno']);
+            $decrement_stmt->execute();
+            $decrement_stmt->close();
+        }
+
+        // Refresh session count from the database
+        $refresh_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
+        $refresh_count_stmt = $conn->prepare($refresh_count_sql);
+        if ($refresh_count_stmt) {
+            $refresh_count_stmt->bind_param("s", $user_info['idno']);
+            $refresh_count_stmt->execute();
+            $refresh_result = $refresh_count_stmt->get_result();
+            $refresh_row = $refresh_result->fetch_assoc();
+            $_SESSION['user_info']['sessions'] = $refresh_row['sessions_remaining'];
+            $refresh_count_stmt->close();
+        }
+
         $_SESSION['session_started'] = true;
         $_SESSION['session_start_time'] = time();
-        $_SESSION['user_info']['sessions']--; // Decrement session count
     } else {
         $error = "No sessions remaining.";
     }
 }
 
-// Handle session end
+// End session logic
 if (isset($_POST['end_session'])) {
     if (isset($_SESSION['session_started']) && $_SESSION['session_started']) {
+        // Update session_end timestamp
+        $update_session_sql = "UPDATE user_sessions 
+                               SET session_end = NOW() 
+                               WHERE user_id = ? 
+                               AND session_end IS NULL 
+                               ORDER BY session_start DESC 
+                               LIMIT 1";
+        $update_stmt = $conn->prepare($update_session_sql);
+        if ($update_stmt) {
+            $update_stmt->bind_param("s", $user_info['id']);
+            $update_stmt->execute();
+            $update_stmt->close();
+        } else {
+            die("Error preparing statement: " . $conn->error);
+        }
+
+        // Update session variables
         $_SESSION['session_started'] = false;
         $session_duration = time() - $_SESSION['session_start_time'];
-        // Optionally, save session details to the database here
     } else {
         $error = "No active session to end.";
     }
 }
 
 $idno = htmlspecialchars($_SESSION['idno']);
-$user_info = $_SESSION['user_info'];
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -214,7 +281,7 @@ $user_info = $_SESSION['user_info'];
                     <p><strong>Course:</strong> <?php echo $user_info['course']; ?></p>
                     <p><strong>Year Level:</strong> <?php echo $user_info['year']; ?></p>
                     <p><strong>Email:</strong> <?php echo $user_info['email']; ?></p>
-                    <p><strong>Sessions Remaining:</strong> <?php echo $user_info['sessions']; ?></p>
+                    <p><strong>Sessions Remaining:</strong> <?php echo $_SESSION['user_info']['sessions']; ?></p>
                 </div>
                 <div class="session-buttons">
                     <form method="POST" action="home.php">

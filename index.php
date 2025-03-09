@@ -18,13 +18,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["create"])) {
         if (password_verify($password, $row['password_hash'])) {
             $_SESSION['idno'] = $idno;
             $_SESSION['user_info'] = $row; 
-            
-          
+
+            // Fetch session count on login
+            $session_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
+            $session_count_stmt = $conn->prepare($session_count_sql);
+            if ($session_count_stmt) {
+                $session_count_stmt->bind_param("s", $idno);
+                $session_count_stmt->execute();
+                $session_count_result = $session_count_stmt->get_result();
+                $session_count_row = $session_count_result->fetch_assoc();
+
+                $_SESSION['user_info']['sessions'] = $session_count_row['sessions_remaining'] ?? 30;
+                $session_count_stmt->close();
+            }
+
             if ($row['role'] == 'admin') {
-                echo 'Redirecting to admin_home.php';
                 header("Location: admin_home.php");
             } else {
-                echo 'Redirecting to home.php';
                 header("Location: home.php");
             }
             exit();            

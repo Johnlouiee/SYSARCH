@@ -9,11 +9,10 @@ if (!isset($_SESSION['idno'])) {
 }
 
 $idno = $_SESSION['idno']; // Get the logged-in user's IDNO
-
 include 'db_connect.php'; // Include your database connection file
 
 // Fetch sit-in history for the logged-in user
-$sql = "SELECT * FROM sit_in_history WHERE user_id = ? ORDER BY date DESC";
+$sql = "SELECT * FROM sit_in_history WHERE user_id = ? ORDER BY session_start DESC";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Error preparing query: " . $conn->error);
@@ -24,22 +23,27 @@ $sit_in_history = $stmt->get_result();
 
 // Handle feedback submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
-    $sit_in_id = $_POST["sit_in_id"];
-    $rating = $_POST["rating"];
-    $comments = $_POST["comments"];
+    // Check if all required fields are set
+    if (isset($_POST["sit_in_id"]) && isset($_POST["rating"]) && isset($_POST["comments"])) {
+        $sit_in_id = $_POST["sit_in_id"];
+        $rating = $_POST["rating"];
+        $comments = $_POST["comments"];
 
-    // Insert feedback into the database
-    $sql = "INSERT INTO feedback (user_id, sit_in_id, rating, comments, submitted_at) VALUES (?, ?, ?, ?, NOW())";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        die("Error preparing query: " . $conn->error);
-    }
-    $stmt->bind_param("siis", $idno, $sit_in_id, $rating, $comments); // Use IDNO instead of user_id
+        // Insert feedback into the database
+        $sql = "INSERT INTO feedback (user_id, sit_in_id, rating, comments, submitted_at) VALUES (?, ?, ?, ?, NOW())";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            die("Error preparing query: " . $conn->error);
+        }
+        $stmt->bind_param("siis", $idno, $sit_in_id, $rating, $comments); // Use IDNO instead of user_id
 
-    if ($stmt->execute()) {
-        $feedback_message = "Feedback submitted successfully!";
+        if ($stmt->execute()) {
+            $feedback_message = "Feedback submitted successfully!";
+        } else {
+            $feedback_message = "Error submitting feedback: " . $stmt->error;
+        }
     } else {
-        $feedback_message = "Error submitting feedback: " . $stmt->error;
+        $feedback_message = "All fields are required!";
     }
 }
 ?>
@@ -117,31 +121,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
             color: #721c24;
         }
         .btn, .back-btn {
-    font-size: 20px;
-    font-weight: bold;
-    padding: 15px 0;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-    width: 100%;
-    transition: background-color 0.3s ease;
-    text-align: center;
-    text-decoration: none;
-    display: block;
-    margin-top: 10px;
-  }
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+        .btn {
+            width: 30%;
+        }
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-  .btn {
-    width: 30%;
-  }
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+<div class="header">
+        <div>
+            <a href="home.php">Home</a>
+            <a href="reports.php">Reports</a>
+            <a href="editprofile.php">Edit Profile</a>
+            <a href="view_announcements.php">View Announcement</a>
+            <a href="reservation.php">Reservation</a>
+            <a href="sitin.php">Sit-In History</a>
+        </div>
+</div>
     <div class="container">
-    <a class="btn" href="home.php">Go Back</a>
-        <h1>Sit-In History </h1>
+        <h1>Sit-In History</h1>
         <?php if (isset($feedback_message)): ?>
             <div class="message <?php echo strpos($feedback_message, 'successfully') !== false ? 'success' : 'error'; ?>">
                 <?php echo $feedback_message; ?>
@@ -161,20 +190,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
                 <tbody>
                     <?php while ($row = $sit_in_history->fetch_assoc()): ?>
                         <tr>
-                            <td><?php echo date("F j, Y, g:i a", strtotime($row['date'])); ?></td>
-                            <td><?php echo $row['duration']; ?></td>
-                            <td><?php echo $row['location']; ?></td>
+                            <td><?php echo date("F j, Y, g:i a", strtotime($row['session_start'])); ?></td>
+                            <td><?php echo isset($row['duration']) ? $row['duration'] : 'N/A'; ?></td>
+                            <td><?php echo isset($row['lab']) ? $row['lab'] : 'N/A'; ?></td>
                             <td>
                                 <!-- Feedback Form -->
                                 <form class="feedback-form" method="POST" action="">
                                     <input type="hidden" name="sit_in_id" value="<?php echo $row['id']; ?>">
-                                    <select name="rating" required>
-                                        <option value="1">1 - Poor</option>
-                                        <option value="2">2 - Fair</option>
-                                        <option value="3">3 - Good</option>
-                                        <option value="4">4 - Very Good</option>
-                                        <option value="5">5 - Excellent</option>
-                                    </select>
+                                   
                                     <textarea name="comments" placeholder="Your feedback..." required></textarea>
                                     <input type="submit" name="submit_feedback" value="Submit Feedback">
                                 </form>

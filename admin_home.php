@@ -1,5 +1,7 @@
 <?php
 session_start();
+
+// Check if the user is logged in and is an admin
 if (!isset($_SESSION['user_info'])) {
     header("Location: index.php");
     exit();
@@ -20,6 +22,19 @@ $total_users = ($result->num_rows > 0) ? $result->fetch_assoc()['total_users'] :
 // Fetch users for list of students
 $sql = "SELECT id, idno, lastname, firstname, middlename, course, year, email, role FROM users ORDER BY role ASC";
 $result = $conn->query($sql);
+
+// Handle search
+$search_result = null;
+if (isset($_GET['search_idno'])) {
+    $search_idno = $_GET['search_idno'];
+    $sql = "SELECT id, idno, lastname, firstname, middlename, course, year, email, role FROM users WHERE idno = ?";
+    $stmt = $conn->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param("s", $search_idno);
+        $stmt->execute();
+        $search_result = $stmt->get_result()->fetch_assoc();
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -28,6 +43,8 @@ $result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
         .header {
@@ -37,7 +54,6 @@ $result = $conn->query($sql);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            
         }
         .header a {
             color: white;
@@ -105,8 +121,9 @@ $result = $conn->query($sql);
 
 <div class="header">
     <div>
-        <a href="view_current_sitin.php">View Current Sit-in</a>
-        <a href="view_sitin_records.php">View Sit-in Records</a>
+        <a href="admin_home.php">Home</a>
+        <a href="view_current_sitin.php">Current Sit-in</a>
+        <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
         <a href="create_announcement.php">Create Announcement</a>
         <a href="view_statistics.php">View Statistics</a>
@@ -121,11 +138,54 @@ $result = $conn->query($sql);
     <h2>Admin Dashboard</h2>
     <p>Total Users: <strong><?= $total_users ?></strong></p>
 
-
+    <!-- Search Bar -->
     <div class="search-bar">
-        <input type="text" id="search" placeholder="Search students..." onkeyup="searchStudents()">
+        <form method="GET" action="">
+            <input type="text" id="search" name="search_idno" placeholder="Search by IDNO..." value="<?= isset($_GET['search_idno']) ? htmlspecialchars($_GET['search_idno']) : '' ?>">
+            <input type="submit" value="Search">
+        </form>
     </div>
 
+    <!-- Modal for Sit-in Form -->
+    <div class="modal fade" id="sitInModal" tabindex="-1" aria-labelledby="sitInModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sitInModalLabel">Sit-in Form</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?php if ($search_result): ?>
+                        <form action="save_sitin.php" method="POST">
+                            <label for="idno">IDNO:</label>
+                            <input type="text" id="idno" name="idno" value="<?= htmlspecialchars($search_result['idno']) ?>" readonly>
+
+                            <label for="student_name">Student Name:</label>
+                            <input type="text" id="student_name" name="student_name" value="<?= htmlspecialchars($search_result['firstname'] . ' ' . $search_result['lastname']) ?>" readonly>
+
+                            <label for="purpose">Purpose:</label>
+                            <input type="text" id="purpose" name="purpose" required>
+
+                            <label for="lab">Lab:</label>
+                            <input type="text" id="purpose" name="lab" required>
+                          
+                        
+
+                            <label for="remaining_sessions">Remaining Sessions:</label>
+                            <input type="text" id="remaining_sessions" name="remaining_sessions" value="30" readonly> <!-- Adjust this value dynamically if needed -->
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- List of Students -->
     <div class="section">
         <h3>List of Students</h3>
         <table id="students-table">
@@ -162,29 +222,9 @@ $result = $conn->query($sql);
     <button class="reset-btn" onclick="resetSession()">Reset Session</button>
 </div>
 
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-
-function searchStudents() {
-    const searchInput = document.getElementById('search').value.toLowerCase();
-    const table = document.getElementById('students-table');
-    const rows = table.getElementsByTagName('tr');
-
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
-        let match = false;
-
-        for (let j = 0; j < cells.length; j++) {
-            if (cells[j].innerText.toLowerCase().includes(searchInput)) {
-                match = true;
-                break;
-            }
-        }
-
-        rows[i].style.display = match ? '' : 'none';
-    }
-}
-
-
 function resetSession() {
     if (confirm('Are you sure you want to reset the session?')) {
         fetch('reset_session.php', {
@@ -208,6 +248,14 @@ function resetSession() {
         });
     }
 }
+
+// Show the modal if a student is found
+<?php if ($search_result): ?>
+    document.addEventListener('DOMContentLoaded', function () {
+        var myModal = new bootstrap.Modal(document.getElementById('sitInModal'), {});
+        myModal.show();
+    });
+<?php endif; ?>
 </script>
 
 </body>

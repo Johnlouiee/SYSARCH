@@ -83,39 +83,48 @@ button:hover {
 }
 
 .reserve-button {
-    background-color: #0066cc;
+    background-color: #green;
 }
 
 .reserve-button:hover {
-    background-color: #0055a3;
+    background-color: green;
 }
-.btn, .back-btn {
-    font-size: 20px;
-    font-weight: bold;
-    padding: 15px 0;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-    width: 100%;
-    transition: background-color 0.3s ease;
-    text-align: center;
-    text-decoration: none;
-    display: block;
-    margin-top: 10px;
-  }
 
-  .btn {
-    width: 30%;
-  }
+  .header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
+        }
+
 </style>
 </head>
 <body>
-<main>
+<div class="header">
+        <div>
+            <a href="home.php">Home</a>
+            <a href="reports.php">Reports</a>
+            <a href="editprofile.php">Edit Profile</a>
+            <a href="view_announcements.php">View Announcement</a>
+            <a href="reservation.php">Reservation</a>
+            <a href="sitin.php">Sit-In History</a>
+        </div>
+</div>
+
         <h1>Reservation</h1>
         <form action="reservation.php" method="post">
-        <a class="btn" href="home.php">Go Back</a>
+
             <label for="idNumber">ID Number:</label>
             <input type="text" id="idNumber" name="idNumber" >
 

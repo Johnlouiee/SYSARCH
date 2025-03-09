@@ -72,28 +72,39 @@ if ($_SESSION['user_info']['role'] !== 'admin') {
         input[type="submit"]:hover {
             background: #45a049;
         }
-        .back-btn {
-            background-color: green;
+        .header {
+            background-color: #333;
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            margin-top: 10px;
-            transition: background-color 0.3s ease;
-            text-align: center;
-            text-decoration: none;
-            display: block;
-            box-sizing: border-box;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .back-btn:hover {
-            background-color: darkgreen;
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
+<div class="header">
+    <div>
+        <a href="admin_home.php">Home</a>
+        <a href="view_current_sitin.php">Current Sit-in</a>
+        <a href="view_sitin.php">Sit-in Records</a>
+        <a href="sitin_reports.php">Sit-in Reports</a>
+        <a href="create_announcement.php">Create Announcement</a>
+        <a href="view_statistics.php">View Statistics</a>
+        <a href="daily_statistics.php">Daily Statistics</a>
+        <a href="view_feedback.php">View Feedback</a>
+        <a href="view_reservation.php">View Reservation</a>
+    </div>
+</div>
+
     <div class="container">
         <h2>Create Announcement</h2>
         <form action="save_announcement.php" method="POST">
@@ -105,7 +116,6 @@ if ($_SESSION['user_info']['role'] !== 'admin') {
 
             <input type="submit" value="Create Announcement">
         </form>
-        <a href="admin_home.php" class="back-btn">Back to Home</a>
     </div>
 </body>
 </html>
