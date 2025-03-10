@@ -19,12 +19,16 @@ $sql_daily = "SELECT COUNT(*) as daily FROM sit_in_history WHERE DATE(session_st
 $result_daily = $conn->query($sql_daily);
 $daily_sitins = $result_daily->fetch_assoc()['daily'];
 
-// Fetch programming language usage for the current day
-$sql_daily_languages = "SELECT programming_language, COUNT(*) as count FROM sit_in_history WHERE DATE(session_start) = CURDATE() GROUP BY programming_language";
-$result_daily_languages = $conn->query($sql_daily_languages);
-$daily_languages = [];
-while ($row = $result_daily_languages->fetch_assoc()) {
-    $daily_languages[] = $row;
+// Fetch sit-in details for the current day
+$sql_daily_details = "SELECT users.firstname, users.lastname, sit_in_history.session_start, sit_in_history.session_end 
+                      FROM sit_in_history 
+                      JOIN users ON sit_in_history.user_id = users.idno 
+                      WHERE DATE(session_start) = CURDATE() 
+                      ORDER BY session_start DESC";
+$result_daily_details = $conn->query($sql_daily_details);
+$daily_details = [];
+while ($row = $result_daily_details->fetch_assoc()) {
+    $daily_details[] = $row;
 }
 ?>
 
@@ -83,11 +87,48 @@ while ($row = $result_daily_languages->fetch_assoc()) {
             background-color: #4CAF50;
             color: white;
         }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+<div class="header">
+    <div>
+        <a href="admin_home.php">Home</a>
+        <a href="view_current_sitin.php">Current Sit-in</a>
+        <a href="view_sitin.php">Sit-in Records</a>
+        <a href="sitin_reports.php">Sit-in Reports</a>
+        <a href="create_announcement.php">Create Announcement</a>
+        <a href="view_statistics.php">View Statistics</a>
+        <a href="daily_statistics.php">Daily Statistics</a>
+        <a href="view_feedback.php">View Feedback</a>
+        <a href="view_reservation.php">View Reservation</a>
+    </div>
+</div>
     <h1>Daily Statistics</h1>
 
+    <!-- Statistics Card -->
     <div class="statistics-container">
         <div class="statistic">
             <h2><?= $daily_sitins ?></h2>
@@ -95,21 +136,30 @@ while ($row = $result_daily_languages->fetch_assoc()) {
         </div>
     </div>
 
-    <h2>Programming Language Usage Today</h2>
+    <!-- Daily Sit-in Details -->
+    <h2>Today's Sit-in Details</h2>
     <table>
         <thead>
             <tr>
-                <th>Programming Language</th>
-                <th>Count</th>
+                <th>Student Name</th>
+                <th>Login Time</th>
+                <th>Logout Time</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($daily_languages as $language): ?>
+            <?php if (!empty($daily_details)): ?>
+                <?php foreach ($daily_details as $detail): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($detail['firstname'] . ' ' . $detail['lastname']) ?></td>
+                        <td><?= htmlspecialchars($detail['session_start']) ?></td>
+                        <td><?= htmlspecialchars($detail['session_end'] ?? 'Still Active') ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
                 <tr>
-                    <td><?= htmlspecialchars($language['programming_language']) ?></td>
-                    <td><?= htmlspecialchars($language['count']) ?></td>
+                    <td colspan="3" style="text-align: center;">No sit-ins found for today.</td>
                 </tr>
-            <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
 </body>

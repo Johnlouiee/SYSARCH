@@ -1,17 +1,17 @@
 <?php
 session_start(); // Start the session
 
-// Check if the user is logged in
+// Check if the user is logged in as a student
 if (!isset($_SESSION['idno'])) {
     // Redirect to login if not logged in
     header("Location: login.php");
     exit();
 }
 
-$idno = $_SESSION['idno']; // Get the logged-in user's IDNO
+$idno = $_SESSION['idno']; // Get the logged-in student's IDNO
 include 'db_connect.php'; // Include your database connection file
 
-// Fetch sit-in history for the logged-in user
+// Fetch sit-in history for the logged-in student
 $sql = "SELECT * FROM sit_in_history WHERE user_id = ? ORDER BY session_start DESC";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -24,18 +24,17 @@ $sit_in_history = $stmt->get_result();
 // Handle feedback submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
     // Check if all required fields are set
-    if (isset($_POST["sit_in_id"]) && isset($_POST["rating"]) && isset($_POST["comments"])) {
+    if (isset($_POST["sit_in_id"]) && isset($_POST["comments"])) {
         $sit_in_id = $_POST["sit_in_id"];
-        $rating = $_POST["rating"];
         $comments = $_POST["comments"];
 
         // Insert feedback into the database
-        $sql = "INSERT INTO feedback (user_id, sit_in_id, rating, comments, submitted_at) VALUES (?, ?, ?, ?, NOW())";
+        $sql = "INSERT INTO feedback (user_id, sit_in_id, comments, submitted_at) VALUES (?, ?, ?, NOW())";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Error preparing query: " . $conn->error);
         }
-        $stmt->bind_param("siis", $idno, $sit_in_id, $rating, $comments); // Use IDNO instead of user_id
+        $stmt->bind_param("sis", $idno, $sit_in_id, $comments); // Use IDNO instead of user_id
 
         if ($stmt->execute()) {
             $feedback_message = "Feedback submitted successfully!";
@@ -94,12 +93,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
             border-radius: 4px;
             margin-bottom: 10px;
         }
-        .feedback-form select, .feedback-form input[type="submit"] {
+        .feedback-form input[type="submit"] {
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-        }
-        .feedback-form input[type="submit"] {
             background-color: #007bff;
             color: #fff;
             cursor: pointer;
@@ -120,25 +117,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
             background-color: #f8d7da;
             color: #721c24;
         }
-        .btn, .back-btn {
-            font-size: 20px;
-            font-weight: bold;
-            padding: 15px 0;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 8px;
-            width: 100%;
-            transition: background-color 0.3s ease;
-            text-align: center;
-            text-decoration: none;
-            display: block;
-            margin-top: 10px;
-        }
-        .btn {
-            width: 30%;
-        }
         .header {
             background-color: #333;
             color: white;
@@ -147,7 +125,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
             justify-content: space-between;
             align-items: center;
         }
-
         .header a {
             color: white;
             text-decoration: none;
@@ -160,56 +137,55 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
 </head>
 <body>
 <div class="header">
-        <div>
-            <a href="home.php">Home</a>
-            <a href="reports.php">Reports</a>
-            <a href="editprofile.php">Edit Profile</a>
-            <a href="view_announcements.php">View Announcement</a>
-            <a href="reservation.php">Reservation</a>
-            <a href="sitin.php">Sit-In History</a>
-        </div>
-</div>
-    <div class="container">
-        <h1>Sit-In History</h1>
-        <?php if (isset($feedback_message)): ?>
-            <div class="message <?php echo strpos($feedback_message, 'successfully') !== false ? 'success' : 'error'; ?>">
-                <?php echo $feedback_message; ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($sit_in_history->num_rows > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Duration (Minutes)</th>
-                        <th>Location</th>
-                        <th>Feedback</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($row = $sit_in_history->fetch_assoc()): ?>
-                        <tr>
-                            <td><?php echo date("F j, Y, g:i a", strtotime($row['session_start'])); ?></td>
-                            <td><?php echo isset($row['duration']) ? $row['duration'] : 'N/A'; ?></td>
-                            <td><?php echo isset($row['lab']) ? $row['lab'] : 'N/A'; ?></td>
-                            <td>
-                                <!-- Feedback Form -->
-                                <form class="feedback-form" method="POST" action="">
-                                    <input type="hidden" name="sit_in_id" value="<?php echo $row['id']; ?>">
-                                   
-                                    <textarea name="comments" placeholder="Your feedback..." required></textarea>
-                                    <input type="submit" name="submit_feedback" value="Submit Feedback">
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>No sit-in history found.</p>
-        <?php endif; ?>
+    <div>
+        <a href="home.php">Home</a>
+        <a href="reports.php">Reports</a>
+        <a href="editprofile.php">Edit Profile</a>
+        <a href="view_announcements.php">View Announcement</a>
+        <a href="reservation.php">Reservation</a>
+        <a href="sitin.php">Sit-In History</a>
     </div>
+</div>
+<div class="container">
+    <h1>Sit-In History</h1>
+    <?php if (isset($feedback_message)): ?>
+        <div class="message <?php echo strpos($feedback_message, 'successfully') !== false ? 'success' : 'error'; ?>">
+            <?php echo $feedback_message; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($sit_in_history->num_rows > 0): ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Duration (Minutes)</th>
+                    <th>Location</th>
+                    <th>Feedback</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($row = $sit_in_history->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo date("F j, Y, g:i a", strtotime($row['session_start'])); ?></td>
+                        <td><?php echo isset($row['duration']) ? $row['duration'] : 'N/A'; ?></td>
+                        <td><?php echo isset($row['lab']) ? $row['lab'] : 'N/A'; ?></td>
+                        <td>
+                            <!-- Feedback Form -->
+                            <form class="feedback-form" method="POST" action="">
+                                <input type="hidden" name="sit_in_id" value="<?php echo $row['id']; ?>">
+                                <textarea name="comments" placeholder="Your feedback..." required></textarea>
+                                <input type="submit" name="submit_feedback" value="Submit Feedback">
+                            </form>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <p>No sit-in history found.</p>
+    <?php endif; ?>
+</div>
 </body>
 </html>
 
