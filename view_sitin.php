@@ -134,16 +134,18 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
 <body>
 <div class="header">
     <div>
+        <h1> College of Computer Studies Admin</h1>
         <a href="admin_home.php">Home</a>
+        <a href="#" id="searchLink">Search</a> 
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
         <a href="create_announcement.php">Create Announcement</a>
         <a href="view_statistics.php">View Statistics</a>
-        <a href="daily_statistics.php">Daily Statistics</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
     </div>
+   
 </div>
     <h1>Current Sit-in Records</h1>
 
@@ -164,7 +166,7 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
                 <th>Login Time</th>
                 <th>Logout Time</th>
                 <th>Date</th>
-                <th>Action</th>
+    
             </tr>
         </thead>
         <tbody>
@@ -183,12 +185,9 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
                         <td><?= htmlspecialchars($row['session_start']) ?></td> <!-- Login Time -->
                         <td><?= htmlspecialchars($row['session_end']) ?></td> <!-- Logout Time -->
                         <td><?= htmlspecialchars($date) ?></td> <!-- Date -->
-                        <td>
-                            <form method="POST" action="end_sitin.php" style="display: inline;">
-                                <input type="hidden" name="sit_in_id" value="<?= $row['id'] ?>">
-                                <button type="submit" class="logout-btn">Log Out</button>
+                       
                             </form>
-                        </td>
+                        
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>

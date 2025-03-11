@@ -19,22 +19,45 @@ $sql = "SELECT COUNT(*) as total_users FROM users";
 $result = $conn->query($sql);
 $total_users = ($result->num_rows > 0) ? $result->fetch_assoc()['total_users'] : 0;
 
-// Fetch users for list of students
-$sql = "SELECT id, idno, lastname, firstname, middlename, course, year, email, role FROM users ORDER BY role ASC";
-$result = $conn->query($sql);
+// Fetch total registered students
+$sql_registered = "SELECT COUNT(*) as total FROM users";
+$result_registered = $conn->query($sql_registered);
+$registered_students = $result_registered->fetch_assoc()['total'];
 
-// Handle search
-$search_result = null;
-if (isset($_GET['search_idno'])) {
-    $search_idno = $_GET['search_idno'];
-    $sql = "SELECT id, idno, lastname, firstname, middlename, course, year, email, role FROM users WHERE idno = ?";
-    $stmt = $conn->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("s", $search_idno);
-        $stmt->execute();
-        $search_result = $stmt->get_result()->fetch_assoc();
-    }
+// Fetch total sit-ins
+$sql_total = "SELECT COUNT(*) as total FROM sit_in_history";
+$result_total = $conn->query($sql_total);
+$total_sitins = $result_total->fetch_assoc()['total'];
+
+// Fetch active sit-ins
+$sql_active = "SELECT COUNT(*) as active FROM sit_in_history WHERE session_end IS NULL";
+$result_active = $conn->query($sql_active);
+$active_sitins = $result_active->fetch_assoc()['active'];
+
+// Fetch programming language distribution data
+$sql_languages = "SELECT purpose, COUNT(*) as count 
+                FROM sit_in_history 
+                GROUP BY purpose";
+$result_languages = $conn->query($sql_languages);
+
+$labels_languages = [];
+$data_languages = [];
+$colors_languages = [
+    'rgba(255, 99, 132, 0.6)',   // Pink for C#
+    'rgba(54, 162, 235, 0.6)',   // Blue for C
+    'rgba(255, 206, 86, 0.6)',   // Yellow for Java
+    'rgba(75, 192, 192, 0.6)',   // Teal for ASP.net
+    'rgba(153, 102, 255, 0.6)'   // Purple for PHP
+];
+
+while ($row = $result_languages->fetch_assoc()) {
+    $labels_languages[] = $row['purpose'];
+    $data_languages[] = $row['count'];
 }
+
+// Fetch recent announcements
+$announcements_sql = "SELECT * FROM announcements ORDER BY created_at DESC LIMIT 5";
+$announcements_result = $conn->query($announcements_sql);
 ?>
 
 <!DOCTYPE html>
@@ -45,8 +68,15 @@ if (isset($_GET['search_idno'])) {
     <title>Admin Dashboard</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+        }
         .header {
             background-color: #333;
             color: white;
@@ -66,12 +96,41 @@ if (isset($_GET['search_idno'])) {
         .container {
             padding: 20px;
         }
-        h2 { margin-bottom: 20px; }
+        h2 {
+            margin-bottom: 20px;
+        }
+        .statistics-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .statistic {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 30%;
+        }
+        .statistic h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .statistic p {
+            margin: 10px 0 0;
+            font-size: 18px;
+            color: #666;
+        }
+        .chart-container {
+            width: 50%;
+            margin: 20px auto;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
+            margin-top: 20px;
+            background-color: white;
         }
         th, td {
             padding: 12px;
@@ -79,18 +138,14 @@ if (isset($_GET['search_idno'])) {
             text-align: left;
         }
         th {
-            background: #4CAF50;
+            background-color: #4CAF50;
             color: white;
         }
-        .search-bar {
-            margin-bottom: 20px;
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
-        .search-bar input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        tr:hover {
+            background-color: #f1f1f1;
         }
         .logout-btn {
             display: inline-block;
@@ -104,16 +159,64 @@ if (isset($_GET['search_idno'])) {
         .logout-btn:hover {
             background: darkred;
         }
-        .reset-btn {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 4px;
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
         }
-        .reset-btn:hover {
-            background: #d32f2f;
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .announcements-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        .announcement-item {
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+        }
+        .announcement-item:last-child {
+            border-bottom: none;
+        }
+        .announcement-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .announcement-content {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .announcement-date {
+            font-size: 0.9em;
+            color: #999;
         }
     </style>
 </head>
@@ -121,13 +224,12 @@ if (isset($_GET['search_idno'])) {
 
 <div class="header">
     <div>
+        <h1> College of Computer Studies Admin</h1>
         <a href="admin_home.php">Home</a>
+        <a href="#" id="searchLink">Search</a>
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
-        <a href="create_announcement.php">Create Announcement</a>
-        <a href="view_statistics.php">View Statistics</a>
-        <a href="daily_statistics.php">Daily Statistics</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
     </div>
@@ -138,126 +240,266 @@ if (isset($_GET['search_idno'])) {
     <h2>Admin Dashboard</h2>
     <p>Total Users: <strong><?= $total_users ?></strong></p>
 
-    <!-- Search Bar -->
-    <div class="search-bar">
-        <form method="GET" action="">
-            <input type="text" id="search" name="search_idno" placeholder="Search by IDNO..." value="<?= isset($_GET['search_idno']) ? htmlspecialchars($_GET['search_idno']) : '' ?>">
-            <input type="submit" value="Search">
-        </form>
-    </div>
-
-    <!-- Modal for Sit-in Form -->
-    <div class="modal fade" id="sitInModal" tabindex="-1" aria-labelledby="sitInModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="sitInModalLabel">Sit-in Form</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Left Column - Statistics -->
+        <div class="col-md-7">
+            <h2>View Statistics</h2>
+            <!-- Statistics Cards -->
+            <div class="statistics-container mb-4">
+                <div class="statistic">
+                    <h2><?= $registered_students ?></h2>
+                    <p>Registered Students</p>
                 </div>
-                <div class="modal-body">
-                    <?php if ($search_result): ?>
-                        <form action="save_sitin.php" method="POST">
-                            <label for="idno">IDNO:</label>
-                            <input type="text" id="idno" name="idno" value="<?= htmlspecialchars($search_result['idno']) ?>" readonly>
+                <div class="statistic">
+                    <h2><?= $active_sitins ?></h2>
+                    <p>Current Sit-ins</p>
+                </div>
+                <div class="statistic">
+                    <h2><?= $total_sitins ?></h2>
+                    <p>Total Sit-ins</p>
+                </div>
+            </div>
 
-                            <label for="student_name">Student Name:</label>
-                            <input type="text" id="student_name" name="student_name" value="<?= htmlspecialchars($search_result['firstname'] . ' ' . $search_result['lastname']) ?>" readonly>
-
-                            <label for="purpose">Purpose:</label>
-                            <input type="text" id="purpose" name="purpose" required>
-
-                            <label for="lab">Lab:</label>
-                            <input type="text" id="purpose" name="lab" required>
-                          
-                        
-
-                            <label for="remaining_sessions">Remaining Sessions:</label>
-                            <input type="text" id="remaining_sessions" name="remaining_sessions" value="30" readonly> <!-- Adjust this value dynamically if needed -->
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Submit</button>
-                            </div>
-                        </form>
-                    <?php endif; ?>
+            <!-- Programming Language Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>Statistics</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px; width:100%">
+                        <canvas id="languagePieChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- List of Students -->
-    <div class="section">
-        <h3>List of Students</h3>
-        <table id="students-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>ID No.</th>
-                    <th>Last Name</th>
-                    <th>First Name</th>
-                    <th>Middle Name</th>
-                    <th>Course</th>
-                    <th>Year</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                <tr>
-                    <td><?= htmlspecialchars($row['id']) ?></td>
-                    <td><?= htmlspecialchars($row['idno']) ?></td>
-                    <td><?= htmlspecialchars($row['lastname']) ?></td>
-                    <td><?= htmlspecialchars($row['firstname']) ?></td>
-                    <td><?= htmlspecialchars($row['middlename']) ?></td>
-                    <td><?= htmlspecialchars($row['course']) ?></td>
-                    <td><?= htmlspecialchars($row['year']) ?></td>
-                    <td><?= htmlspecialchars($row['email']) ?></td>
-                    <td><?= ucfirst(htmlspecialchars($row['role'])) ?></td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <!-- Right Column - Announcements -->
+        <div class="col-md-5">
+            <div class="announcements-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Announcements</h3>
+                    <button class="btn btn-success" id="createAnnouncementBtn">Create New Announcement</button>
+                </div>
+                <?php if ($announcements_result && $announcements_result->num_rows > 0): ?>
+                    <?php while($announcement = $announcements_result->fetch_assoc()): ?>
+                        <div class="announcement-item">
+                            <div class="announcement-title"><?= htmlspecialchars($announcement['title']) ?></div>
+                            <div class="announcement-content"><?= nl2br(htmlspecialchars($announcement['content'])) ?></div>
+                            <div class="announcement-date">Posted on: <?= date('F j, Y g:i A', strtotime($announcement['created_at'])) ?></div>
+                        </div>
+                    <?php endwhile; ?>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-primary" id="viewAllAnnouncementsBtn">View All Announcements</button>
+                    </div>
+                <?php else: ?>
+                    <p>No announcements yet.</p>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
-    <button class="reset-btn" onclick="resetSession()">Reset Session</button>
+</div>
+
+<!-- Search Modal -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('searchModal')">&times;</span>
+        <h3>Search Student</h3>
+        <form id="searchForm">
+            <div class="form-group">
+                <label for="search_idno">ID Number:</label>
+                <input type="text" id="search_idno" name="search_idno" placeholder="Enter ID Number" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+        <div id="searchResults"></div>
+    </div>
+</div>
+
+<!-- Create Announcement Modal -->
+<div id="createAnnouncementModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('createAnnouncementModal')">&times;</span>
+        <h3>Create Announcement</h3>
+        <form id="createAnnouncementForm">
+            <div class="form-group mb-3">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" class="form-control" required>
+            </div>
+            <div class="form-group mb-3">
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" class="form-control" rows="5" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Announcement</button>
+        </form>
+    </div>
+</div>
+
+<!-- View All Announcements Modal -->
+<div id="viewAnnouncementsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('viewAnnouncementsModal')">&times;</span>
+        <h3>All Announcements</h3>
+        <div id="allAnnouncementsList" class="announcements-list">
+            <!-- Announcements will be loaded here -->
+        </div>
+    </div>
 </div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function resetSession() {
-    if (confirm('Are you sure you want to reset the session?')) {
-        fetch('reset_session.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ reset: true })
+    // Function to open specific modal
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = "block";
+    }
+
+    // Function to close specific modal
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+        if (modalId === 'createAnnouncementModal') {
+            document.getElementById("createAnnouncementForm").reset();
+        }
+    }
+
+    // Event listeners for opening modals
+    document.getElementById("searchLink").addEventListener("click", function(event) {
+        event.preventDefault();
+        openModal('searchModal');
+    });
+
+    document.getElementById("createAnnouncementBtn").addEventListener("click", function(event) {
+        event.preventDefault();
+        openModal('createAnnouncementModal');
+    });
+
+    document.getElementById("viewAllAnnouncementsBtn").addEventListener("click", function(event) {
+        event.preventDefault();
+        loadAllAnnouncements();
+    });
+
+    // Handle search form submission
+    document.getElementById("searchForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const search_idno = document.getElementById("search_idno").value;
+        window.location.href = "search_student.php?search_idno=" + encodeURIComponent(search_idno);
+    });
+
+    // Handle create announcement form submission
+    document.getElementById("createAnnouncementForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch("save_announcement.php", {
+            method: "POST",
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                alert('Session has been reset.');
+            if (data.status === "success") {
+                alert("Announcement created successfully!");
+                closeModal('createAnnouncementModal');
+                // Reload the page to show the new announcement
+                window.location.reload();
             } else {
-                alert('Failed to reset session.');
+                alert("Error: " + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while resetting the session.');
+            console.error("Error:", error);
+            alert("An error occurred while creating the announcement.");
+        });
+    });
+
+    // Function to load all announcements
+    function loadAllAnnouncements() {
+        fetch("get_announcements.php")
+        .then(response => response.json())
+        .then(data => {
+            const announcementsList = document.getElementById("allAnnouncementsList");
+            announcementsList.innerHTML = "";
+
+            if (data.length > 0) {
+                data.forEach(announcement => {
+                    const announcementDiv = document.createElement("div");
+                    announcementDiv.className = "announcement-item";
+                    announcementDiv.innerHTML = `
+                        <div class="announcement-title">${announcement.title}</div>
+                        <div class="announcement-content">${announcement.content}</div>
+                        <div class="announcement-date">Posted on: ${new Date(announcement.created_at).toLocaleString()}</div>
+                    `;
+                    announcementsList.appendChild(announcementDiv);
+                });
+            } else {
+                announcementsList.innerHTML = "<p>No announcements available.</p>";
+            }
+            openModal('viewAnnouncementsModal');
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while loading announcements.");
         });
     }
-}
 
-// Show the modal if a student is found
-<?php if ($search_result): ?>
-    document.addEventListener('DOMContentLoaded', function () {
-        var myModal = new bootstrap.Modal(document.getElementById('sitInModal'), {});
-        myModal.show();
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = "none";
+        }
+    }
+
+    // Programming Language Distribution Pie Chart
+    const languageCtx = document.getElementById('languagePieChart').getContext('2d');
+    new Chart(languageCtx, {
+        type: 'pie',
+        data: {
+            labels: <?= json_encode($labels_languages) ?>,
+            datasets: [{
+                data: <?= json_encode($data_languages) ?>,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',   // Pink for C#
+                    'rgba(54, 162, 235, 0.7)',   // Blue for C
+                    'rgba(255, 206, 86, 0.7)',   // Yellow for Java
+                    'rgba(75, 192, 192, 0.7)',   // Teal for ASP.net
+                    'rgba(153, 102, 255, 0.7)'   // Purple for PHP
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Statistics',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: 20
+                }
+            }
+        }
     });
-<?php endif; ?>
 </script>
-
 </body>
 </html>
 

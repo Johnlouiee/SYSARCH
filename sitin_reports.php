@@ -176,17 +176,18 @@ if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
 <body>
 <div class="header">
     <div>
+        <h1> College of Computer Studies Admin</h1>
         <a href="admin_home.php">Home</a>
+        <a href="#" id="searchLink">Search</a>
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
-        <a href="create_announcement.php">Create Announcement</a>
-        <a href="view_statistics.php">View Statistics</a>
-        <a href="daily_statistics.php">Daily Statistics</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
     </div>
+    <a href="logout.php" class="logout-btn">Logout</a>
 </div>
+
     <h1>Sit-in Reports</h1>
 
     <!-- Filter Form -->

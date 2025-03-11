@@ -12,7 +12,7 @@ $idno = $_SESSION['idno']; // Get the logged-in student's IDNO
 include 'db_connect.php'; // Include your database connection file
 
 // Fetch sit-in history for the logged-in student
-$sql = "SELECT * FROM sit_in_history WHERE user_id = ? ORDER BY session_start DESC";
+$sql = "SELECT *, TIMESTAMPDIFF(MINUTE, session_start, session_end) AS duration FROM sit_in_history WHERE user_id = ? ORDER BY session_start DESC";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Error preparing query: " . $conn->error);

@@ -1,73 +1,71 @@
 <?php
-// Enable error reporting
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 session_start();
 
 // Check if the user is logged in and is an admin
-if (!isset($_SESSION['user_info'])) {
+if (!isset($_SESSION['user_info']) || $_SESSION['user_info']['role'] !== 'admin') {
     header("Location: index.php");
     exit();
 }
 
-if ($_SESSION['user_info']['role'] !== 'admin') {
-    header("Location: index.php");
-    exit();
-}
-
-// Include the database connection file
 include 'db_connect.php';
 
-// Debugging: Check database connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Debugging: Check if form is submitted
-    echo "Form submitted successfully!<br>";
-
     // Validate form inputs
-    if (empty($_POST['idno']) || empty($_POST['purpose']) || empty($_POST['lab']) || empty($_POST['remaining_sessions'])) {
-        die("All fields are required."); // Debugging line
+    if (empty($_POST['idno']) || empty($_POST['purpose']) || empty($_POST['lab'])) {
+        header("Location: search_student.php?error=missing_fields");
+        exit();
     }
 
-    $idno = $_POST['idno'];
-    $purpose = $_POST['purpose'];
-    $lab = $_POST['lab'];
-    $remaining_sessions = $_POST['remaining_sessions'];
+    $idno = mysqli_real_escape_string($conn, $_POST['idno']);
+    $purpose = mysqli_real_escape_string($conn, $_POST['purpose']);
+    $lab = mysqli_real_escape_string($conn, $_POST['lab']);
 
-    // Prepare and execute the SQL query
-    $sql = "INSERT INTO sit_in_history (user_id, purpose, lab, remaining_sessions, session_start) VALUES (?, ?, ?, ?, NOW())";
+    // Check if student exists
+    $check_sql = "SELECT idno FROM users WHERE idno = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("s", $idno);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+
+    if ($check_result->num_rows === 0) {
+        header("Location: search_student.php?error=student_not_found");
+        exit();
+    }
+
+    // Check if student already has an active sit-in
+    $active_sql = "SELECT id FROM sit_in_history WHERE user_id = ? AND session_end IS NULL";
+    $active_stmt = $conn->prepare($active_sql);
+    $active_stmt->bind_param("s", $idno);
+    $active_stmt->execute();
+    $active_result = $active_stmt->get_result();
+
+    if ($active_result->num_rows > 0) {
+        header("Location: search_student.php?error=active_session_exists");
+        exit();
+    }
+
+    // Insert new sit-in record
+    $sql = "INSERT INTO sit_in_history (user_id, purpose, lab, session_start) VALUES (?, ?, ?, NOW())";
     $stmt = $conn->prepare($sql);
 
     if ($stmt) {
-        $stmt->bind_param("sssi", $idno, $purpose, $lab, $remaining_sessions);
+        $stmt->bind_param("sss", $idno, $purpose, $lab);
 
         if ($stmt->execute()) {
-            // Debugging: Check if query is executed successfully
-            echo "Query executed successfully!<br>";
-
-            // Redirect to admin dashboard on success
-            header("Location: admin_home.php?success=1");
+            header("Location: view_current_sitin.php?success=1");
             exit();
         } else {
-            // Debugging: Display SQL error
-            die("Error executing query: " . $stmt->error);
+            header("Location: search_student.php?error=database_error");
+            exit();
         }
     } else {
-        // Debugging: Display SQL preparation error
-        die("Error preparing query: " . $conn->error);
+        header("Location: search_student.php?error=prepare_error");
+        exit();
     }
 } else {
-    // Debugging: Check if form is not submitted
-    echo "Form not submitted.<br>";
-
-    // Redirect if the form is not submitted
-    header("Location: admin_home.php");
+    header("Location: search_student.php?error=invalid_method");
     exit();
 }
+
+$conn->close();
 ?>

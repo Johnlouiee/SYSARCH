@@ -14,24 +14,33 @@ if ($_SESSION['user_info']['role'] !== 'admin') {
 
 include 'db_connect.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sit_in_id'])) {
     $sit_in_id = $_POST['sit_in_id'];
-
-    // Update session_end to mark the sit-in as ended
-    $sql = "UPDATE sit_in_history SET session_end = NOW() WHERE id = ?";
+    
+    // Update the sit-in session end time
+    $sql = "UPDATE sit_in_history 
+            SET session_end = NOW(), 
+                date_time = NOW() 
+            WHERE id = ? AND session_end IS NULL";
+    
     $stmt = $conn->prepare($sql);
     if ($stmt) {
         $stmt->bind_param("i", $sit_in_id);
+        
         if ($stmt->execute()) {
-            header("Location: view_current_sitin.php?success=1");
-            exit();
+            // Successfully ended the sit-in session
+            $_SESSION['success_message'] = "Sit-in session ended successfully.";
         } else {
-            header("Location: view_current_sitin.php?error=1");
-            exit();
+            $_SESSION['error_message'] = "Error ending sit-in session.";
         }
+        
+        $stmt->close();
     } else {
-        header("Location: view_current_sitin.php?error=1");
-        exit();
+        $_SESSION['error_message'] = "Database error: " . $conn->error;
     }
 }
-?>
+
+// Redirect back to the current sit-in page
+header("Location: view_current_sitin.php");
+exit();
+?> 
