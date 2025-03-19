@@ -2,76 +2,76 @@
 session_start();
 
 // Check if the user is logged in and is an admin
-if (!isset($_SESSION['user_info'])) {
-    header("Location: index.php");
-    exit();
-}
-
-if ($_SESSION['user_info']['role'] !== 'admin') {
+if (!isset($_SESSION['user_info']) || $_SESSION['user_info']['role'] !== 'admin') {
     header("Location: index.php");
     exit();
 }
 
 include 'db_connect.php';
 
-// Initialize variables
-$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d'); // Default to today's date
-$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d'); // Default to today's date
-$reports = [];
+// Pagination
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$per_page = 10; // Entries per page
+$offset = ($page - 1) * $per_page;
 
-// Fetch sit-in reports based on date range
-if (!empty($start_date) && !empty($end_date)) {
-    $sql = "SELECT sit_in_history.*, users.firstname, users.lastname 
-            FROM sit_in_history 
-            JOIN users ON sit_in_history.user_id = users.idno 
-            WHERE DATE(session_start) BETWEEN ? AND ? 
-            ORDER BY session_start DESC";
-    $stmt = $conn->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("ss", $start_date, $end_date);
-        if ($stmt->execute()) {
-            $result = $stmt->get_result();
-            while ($row = $result->fetch_assoc()) {
-                $reports[] = $row;
-            }
-        } else {
-            echo "SQL Error: " . $stmt->error;
-        }
-    } else {
-        echo "Prepare Error: " . $conn->error;
-    }
+// Search functionality
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
+// Fetch sit-in report data with search and pagination
+$sql = "SELECT sit_in_history.user_id, users.firstname, users.lastname, sit_in_history.lab, sit_in_history.purpose, 
+               sit_in_history.session_start, sit_in_history.session_end 
+        FROM sit_in_history 
+        JOIN users ON sit_in_history.user_id = users.idno 
+        WHERE (sit_in_history.user_id LIKE ? OR sit_in_history.lab LIKE ? OR sit_in_history.purpose LIKE ?)
+        ORDER BY sit_in_history.session_start DESC 
+        LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Error preparing query: " . $conn->error);
 }
 
-// Export reports to CSV
-if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="sit_in_reports_' . $start_date . '_to_' . $end_date . '.csv"');
+$search_term = "%$search%";
+$stmt->bind_param("sssii", $search_term, $search_term, $search_term, $per_page, $offset);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    $output = fopen('php://output', 'w');
+$reports = [];
+while ($row = $result->fetch_assoc()) {
+    $reports[] = $row;
+}
 
-    // Add CSV headers
-    fputcsv($output, [
-        'IDNO', 'Student Name', 'Purpose', 'Lab', 'Login Time', 'Logout Time', 'Date'
-    ]);
+// Fetch total number of reports for pagination
+$sql_total = "SELECT COUNT(*) as total 
+              FROM sit_in_history 
+              JOIN users ON sit_in_history.user_id = users.idno 
+              WHERE (sit_in_history.user_id LIKE ? OR sit_in_history.lab LIKE ? OR sit_in_history.purpose LIKE ?)";
+$stmt_total = $conn->prepare($sql_total);
+if (!$stmt_total) {
+    die("Error preparing query: " . $conn->error);
+}
+$stmt_total->bind_param("sss", $search_term, $search_term, $search_term);
+$stmt_total->execute();
+$total_result = $stmt_total->get_result();
+$total_row = $total_result->fetch_assoc();
+$total_reports = $total_row['total'];
+$total_pages = ceil($total_reports / $per_page);
 
-    // Add CSV data
-    foreach ($reports as $report) {
-        // Extract date from session_start
-        $date = date('Y-m-d', strtotime($report['session_start']));
-
-        fputcsv($output, [
-            $report['user_id'],
-            $report['firstname'] . ' ' . $report['lastname'],
-            $report['purpose'],
-            $report['lab'],
-            $report['session_start'], // Login Time
-            $report['session_end'],   // Logout Time
-            $date                     // Date
-        ]);
+$error = null;
+if (isset($_GET['error'])) {
+    switch ($_GET['error']) {
+        case 'active_session_exists':
+            $error = "This student already has an active sit-in session.";
+            break;
+        case 'student_not_found':
+            $error = "Student not found.";
+            break;
+        case 'database_error':
+            $error = "A database error occurred.";
+            break;
+        default:
+            $error = "An unknown error occurred.";
+            break;
     }
-
-    fclose($output);
-    exit();
 }
 ?>
 
@@ -80,7 +80,7 @@ if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sit-in Reports</title>
+    <title>View Reservation</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -91,36 +91,32 @@ if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
         h1 {
             text-align: center;
             margin-bottom: 20px;
+            color: #333;
         }
-        .filter-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
+        .search-bar {
             margin-bottom: 20px;
+            text-align: center;
         }
-        .filter-container input[type="date"] {
+        .search-bar input[type="text"] {
             padding: 8px;
-            font-size: 16px;
+            width: 300px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
-        .filter-container button {
+        .search-bar button {
             padding: 8px 16px;
-            font-size: 16px;
+            border: none;
             background-color: #4CAF50;
             color: white;
-            border: none;
             border-radius: 4px;
             cursor: pointer;
-        }
-        .filter-container button:hover {
-            background-color: #45a049;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         th, td {
             padding: 12px;
@@ -142,17 +138,25 @@ if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
             color: #777;
             margin-top: 20px;
         }
-        .export-btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
+        .pagination {
+            text-align: center;
             margin-top: 20px;
         }
-        .export-btn:hover {
-            background-color: #45a049;
+        .pagination a, .pagination span {
+            padding: 8px 16px;
+            margin: 0 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #4CAF50;
+        }
+        .pagination a:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .pagination span {
+            background-color: #4CAF50;
+            color: white;
         }
         .header {
             background-color: #333;
@@ -171,14 +175,26 @@ if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
         .header a:hover {
             text-decoration: underline;
         }
+        .logout-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout-btn:hover {
+            background-color: #d32f2f;
+        }
     </style>
 </head>
 <body>
 <div class="header">
     <div>
-        <h1> College of Computer Studies Admin</h1>
+        <h2> College of Computer Studies Admin</h2>
         <a href="admin_home.php">Home</a>
-        <a href="#" id="searchLink">Search</a>
+        <a href="search_student.php">Search</a>
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
@@ -187,61 +203,71 @@ if (isset($_GET['export']) && !empty($start_date) && !empty($end_date)) {
     </div>
     <a href="logout.php" class="logout-btn">Logout</a>
 </div>
+    <h1>View Reservation</h1>
 
-    <h1>Sit-in Reports</h1>
-
-    <!-- Filter Form -->
-    <div class="filter-container">
+    <!-- Search Bar -->
+    <div class="search-bar">
         <form method="GET" action="">
-            <input type="date" name="start_date" value="<?= htmlspecialchars($start_date) ?>" required>
-            <input type="date" name="end_date" value="<?= htmlspecialchars($end_date) ?>" required>
-            <button type="submit">Generate Report</button>
+            <input type="text" name="search" placeholder="Search by ID, name, lab, or purpose..." value="<?= htmlspecialchars($search) ?>">
+            <button type="submit">Search</button>
         </form>
     </div>
 
-    <!-- Export Button -->
-    <?php if (!empty($reports)): ?>
-        <a href="sitin_reports.php?export=1&start_date=<?= urlencode($start_date) ?>&end_date=<?= urlencode($end_date) ?>" class="export-btn">Export to CSV</a>
-    <?php endif; ?>
-
-    <!-- Reports Table -->
-    <?php if (!empty($reports)): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>IDNO</th>
-                    <th>Student Name</th>
-                    <th>Purpose</th>
-                    <th>Lab</th>
-                    <th>Login Time</th>
-                    <th>Logout Time</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($reports as $report): ?>
-                    <?php
-                    // Extract date from session_start
-                    $date = date('Y-m-d', strtotime($report['session_start']));
-                    ?>
+    <!-- Reservation Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Student Name</th>
+                <th>Lab</th>
+                <th>Reservation Date</th>
+                <th>Time In</th>
+                <th>Purpose</th>
+                <th>Remaining Session</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($reservations)): ?>
+                <?php foreach ($reservations as $reservation): ?>
                     <tr>
-                        <td><?= htmlspecialchars($report['user_id']) ?></td>
-                        <td><?= htmlspecialchars($report['firstname'] . ' ' . $report['lastname']) ?></td>
-                        <td><?= htmlspecialchars($report['purpose']) ?></td>
-                        <td><?= htmlspecialchars($report['lab']) ?></td>
-                        <td><?= htmlspecialchars($report['session_start']) ?></td>
-                        <td><?= htmlspecialchars($report['session_end']) ?></td>
-                        <td><?= htmlspecialchars($date) ?></td>
+                        <td><?= htmlspecialchars($reservation['user_id']) ?></td>
+                        <td><?= htmlspecialchars($reservation['student_name']) ?></td>
+                        <td><?= htmlspecialchars($reservation['lab']) ?></td>
+                        <td><?= htmlspecialchars($reservation['reservation_date']) ?></td>
+                        <td><?= htmlspecialchars($reservation['time_in']) ?></td>
+                        <td><?= htmlspecialchars($reservation['purpose']) ?></td>
+                        <td><?= htmlspecialchars($reservation['remaining_session']) ?></td>
                     </tr>
                 <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php elseif (!empty($start_date) && !empty($end_date)): ?>
-        <p class="no-records">No records found for the selected date range.</p>
-    <?php endif; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="7" class="no-records">No reservations found.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>">Previous</a>
+        <?php endif; ?>
+        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <?php if ($i == $page): ?>
+                <span><?= $i ?></span>
+            <?php else: ?>
+                <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>"><?= $i ?></a>
+            <?php endif; ?>
+        <?php endfor; ?>
+        <?php if ($page < $total_pages): ?>
+            <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>">Next</a>
+        <?php endif; ?>
+    </div>
 </body>
 </html>
 
 <?php
+$stmt->close();
+$stmt_total->close();
 $conn->close();
 ?>

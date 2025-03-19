@@ -5,7 +5,7 @@ session_start([
     'cookie_httponly' => true,
 ]);
 
-include 'db_connect.php'; // Include the database connection
+include 'db_connect.php';
 
 if (!isset($_SESSION['idno'])) {
     header("Location: index.php");
@@ -14,7 +14,7 @@ if (!isset($_SESSION['idno'])) {
 
 session_regenerate_id(true);
 
-// Fetch user information from the database
+// Fetch user information
 $idno = $_SESSION['idno'];
 $sql = "SELECT * FROM users WHERE idno = ?";
 $stmt = $conn->prepare($sql);
@@ -27,21 +27,19 @@ $stmt->close();
 // Initialize or refresh session count
 $session_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
 $session_count_stmt = $conn->prepare($session_count_sql);
-if ($session_count_stmt) {
-    $session_count_stmt->bind_param("s", $user_info['idno']);
-    $session_count_stmt->execute();
-    $session_count_result = $session_count_stmt->get_result();
-    $session_count_row = $session_count_result->fetch_assoc();
+$session_count_stmt->bind_param("s", $idno);
+$session_count_stmt->execute();
+$session_count_result = $session_count_stmt->get_result();
+$session_count_row = $session_count_result->fetch_assoc();
 
-    // Initialize $_SESSION['user_info'] if not set
-    if (!isset($_SESSION['user_info'])) {
-        $_SESSION['user_info'] = [];
-    }
-
-    // Set the session count, defaulting to 30 if not available
-    $_SESSION['user_info']['sessions'] = $session_count_row['sessions_remaining'] ?? 30;
-    $session_count_stmt->close();
+if (!isset($_SESSION['user_info'])) {
+    $_SESSION['user_info'] = [];
 }
+$_SESSION['user_info']['sessions'] = $session_count_row['sessions_remaining'] ?? 30;
+$session_count_stmt->close();
+
+$success_message = '';
+$error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($_SESSION['user_info']['sessions'] > 0) {
@@ -50,44 +48,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $purpose = $_POST['purpose'];
         $lab = $_POST['lab'];
         $time_in = $_POST['timeIn'];
-        $reservation_date = $_POST['date'];
+        $reservation_date = date('Y-m-d', strtotime($_POST['date'])); // Convert to MySQL date format
         $remaining_session = $_POST['remainingSession'];
 
-        // Insert reservation data
-        $sql = "INSERT INTO reservations (user_id, student_name, purpose, lab, time_in, reservation_date, remaining_session)
-                VALUES ('$user_id', '$student_name', '$purpose', '$lab', '$time_in', '$reservation_date', '$remaining_session')";
+        // Insert reservation as "Pending"
+        $sql = "INSERT INTO reservations (user_id, student_name, purpose, lab, time_in, reservation_date, remaining_session, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssssi", $user_id, $student_name, $purpose, $lab, $time_in, $reservation_date, $remaining_session);
 
-        if ($conn->query($sql) === TRUE) {
-            // Decrement session count in database
-            $decrement_sql = "UPDATE users SET sessions_remaining = sessions_remaining - 1 WHERE idno = ?";
-            $decrement_stmt = $conn->prepare($decrement_sql);
-            if ($decrement_stmt) {
-                $decrement_stmt->bind_param("s", $user_info['idno']);
-                $decrement_stmt->execute();
-                $decrement_stmt->close();
-            }
-
-            // Refresh session count from the database
-            $refresh_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
-            $refresh_count_stmt = $conn->prepare($refresh_count_sql);
-            if ($refresh_count_stmt) {
-                $refresh_count_stmt->bind_param("s", $user_info['idno']);
-                $refresh_count_stmt->execute();
-                $refresh_result = $refresh_count_stmt->get_result();
-                $refresh_row = $refresh_result->fetch_assoc();
-                $_SESSION['user_info']['sessions'] = $refresh_row['sessions_remaining'];
-                $refresh_count_stmt->close();
-            }
-
-            echo "Reservation successful!";
+        if ($stmt->execute()) {
+            $success_message = "Reservation request submitted successfully! Awaiting admin approval.";
         } else {
-            echo "Error: " . $sql . "<br>" . $conn->error;
+            $error_message = "Error: " . $conn->error;
         }
+        $stmt->close();
     } else {
-        echo "No sessions remaining.";
+        $error_message = "No sessions remaining.";
     }
-
-    $conn->close();
 }
 ?>
 
@@ -98,88 +76,68 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserve</title>
     <style>
-    body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
-
-header {
-    background-color: #333;
-    color: white;
-    padding: 10px 0;
-}
-
-nav ul {
-    list-style: none;
-    text-align: right;
-    margin: 0;
-    padding: 0;
-}
-
-nav ul li {
-    display: inline;
-    margin-right: 20px;
-}
-
-nav ul li a {
-    color: white;
-    text-decoration: none;
-}
-
-main {
-    margin: 20px auto;
-    padding: 20px;
-    width: 400px;
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-    text-align: center;
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-}
-
-label {
-    margin-top: 10px;
-}
-
-input {
-    margin-top: 5px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-button {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-.reserve-button {
-    background-color: #green;
-}
-
-.reserve-button:hover {
-    background-color: green;
-}
-
-  .header {
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+        }
+        nav ul {
+            list-style: none;
+            text-align: right;
+            margin: 0;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        main {
+            margin: 20px auto;
+            padding: 20px;
+            width: 400px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+        }
+        input {
+            margin-top: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .header {
             background-color: #333;
             color: white;
             padding: 10px 20px;
@@ -187,7 +145,6 @@ button:hover {
             justify-content: space-between;
             align-items: center;
         }
-
         .header a {
             color: white;
             text-decoration: none;
@@ -196,8 +153,21 @@ button:hover {
         .header a:hover {
             text-decoration: underline;
         }
-
-</style>
+        .message {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
 </head>
 <body>
 <div class="header">
@@ -211,30 +181,38 @@ button:hover {
     </div>
 </div>
 
-<h1>Reservation</h1>
-<form action="reservation.php" method="post">
-    <label for="idNumber">ID Number:</label>
-    <input type="text" id="idNumber" name="idNumber" value="<?php echo htmlspecialchars($user_info['idno'] ?? ''); ?>" readonly>
+<main>
+    <h1>Reservation</h1>
+    <?php if ($success_message): ?>
+        <div class="message success"><?= htmlspecialchars($success_message) ?></div>
+    <?php endif; ?>
+    <?php if ($error_message): ?>
+        <div class="message error"><?= htmlspecialchars($error_message) ?></div>
+    <?php endif; ?>
+    <form action="reservation.php" method="post">
+        <label for="idNumber">ID Number:</label>
+        <input type="text" id="idNumber" name="idNumber" value="<?= htmlspecialchars($user_info['idno'] ?? '') ?>" readonly>
 
-    <label for="studentName">Student Name:</label>
-    <input type="text" id="studentName" name="studentName" value="<?php echo htmlspecialchars($user_info['name'] ?? ''); ?>" readonly>
+        <label for="studentName">Student Name:</label>
+        <input type="text" id="studentName" name="studentName" value="<?= htmlspecialchars($user_info['name'] ?? '') ?>" readonly>
 
-    <label for="purpose">Purpose:</label>
-    <input type="text" id="purpose" name="purpose" required>
+        <label for="purpose">Purpose:</label>
+        <input type="text" id="purpose" name="purpose" required>
 
-    <label for="lab">Lab:</label>
-    <input type="text" id="lab" name="lab" required>
+        <label for="lab">Lab:</label>
+        <input type="text" id="lab" name="lab" required>
 
-    <label for="timeIn">Time In:</label>
-    <input type="text" id="timeIn" name="timeIn" placeholder="hh:mm" required>
+        <label for="timeIn">Time In:</label>
+        <input type="text" id="timeIn" name="timeIn" placeholder="hh:mm" required>
 
-    <label for="date">Date:</label>
-    <input type="text" id="date" name="date" placeholder="dd/mm/yyyy" required>
+        <label for="date">Date:</label>
+        <input type="text" id="date" name="date" placeholder="dd/mm/yyyy" required>
 
-    <label for="remainingSession">Remaining Session:</label>
-    <input type="text" id="remainingSession" name="remainingSession" value="<?php echo htmlspecialchars($_SESSION['user_info']['sessions'] ?? 30); ?>" readonly>
+        <label for="remainingSession">Remaining Session:</label>
+        <input type="text" id="remainingSession" name="remainingSession" value="<?= htmlspecialchars($_SESSION['user_info']['sessions'] ?? 30) ?>" readonly>
 
-    <button type="submit" class="reserve-button">Reserve</button>
-</form>
+        <button type="submit">Reserve</button>
+    </form>
+</main>
 </body>
 </html>

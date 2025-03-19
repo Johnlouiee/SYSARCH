@@ -24,91 +24,46 @@ $result = $stmt->get_result();
 $user_info = $result->fetch_assoc();
 $stmt->close();
 
-// Initialize or refresh session count
-$session_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
-$session_count_stmt = $conn->prepare($session_count_sql);
-if ($session_count_stmt) {
-    $session_count_stmt->bind_param("s", $user_info['idno']);
-    $session_count_stmt->execute();
-    $session_count_result = $session_count_stmt->get_result();
-    $session_count_row = $session_count_result->fetch_assoc();
+// Get total completed sit-in sessions (where session_end is NOT NULL)
+$completed_sessions_sql = "SELECT COUNT(*) as completed_sessions 
+                          FROM sit_in_history 
+                          WHERE user_id = ? AND session_end IS NOT NULL";
+$completed_stmt = $conn->prepare($completed_sessions_sql);
+$completed_stmt->bind_param("s", $idno);
+$completed_stmt->execute();
+$completed_result = $completed_stmt->get_result();
+$completed_row = $completed_result->fetch_assoc();
+$completed_sessions = $completed_row['completed_sessions'];
+$completed_stmt->close();
 
-    $_SESSION['user_info']['sessions'] = $session_count_row['sessions_remaining'] ?? 30; // Default to 30
-    $session_count_stmt->close();
-}
+// Calculate remaining sessions
+$max_sessions = 30;
+$remaining_sessions = max(0, $max_sessions - $completed_sessions);
 
-// Start session logic
-if (isset($_POST['start_session'])) {
-    if ($_SESSION['user_info']['sessions'] > 0) {
-        // Insert new session record
-        $insert_session_sql = "INSERT INTO user_sessions (user_id, session_start) VALUES (?, NOW())";
-        $insert_stmt = $conn->prepare($insert_session_sql);
-        if ($insert_stmt) {
-            $insert_stmt->bind_param("s", $user_info['id']);
-            $insert_stmt->execute();
-            $insert_stmt->close();
-        } else {
-            die("Error preparing statement: " . $conn->error);
-        }
+// Get current active sit-in session status
+$active_session_sql = "SELECT COUNT(*) as active_sessions 
+                       FROM sit_in_history 
+                       WHERE user_id = ? AND session_end IS NULL";
+$active_stmt = $conn->prepare($active_session_sql);
+$active_stmt->bind_param("s", $idno);
+$active_stmt->execute();
+$active_result = $active_stmt->get_result();
+$active_row = $active_result->fetch_assoc();
+$is_session_active = $active_row['active_sessions'] > 0;
+$active_stmt->close();
 
-        // Decrement session count in database
-        $decrement_sql = "UPDATE users SET sessions_remaining = sessions_remaining - 1 WHERE idno = ?";
-        $decrement_stmt = $conn->prepare($decrement_sql);
-        if ($decrement_stmt) {
-            $decrement_stmt->bind_param("s", $user_info['idno']);
-            $decrement_stmt->execute();
-            $decrement_stmt->close();
-        }
-
-        // Refresh session count from the database
-        $refresh_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
-        $refresh_count_stmt = $conn->prepare($refresh_count_sql);
-        if ($refresh_count_stmt) {
-            $refresh_count_stmt->bind_param("s", $user_info['idno']);
-            $refresh_count_stmt->execute();
-            $refresh_result = $refresh_count_stmt->get_result();
-            $refresh_row = $refresh_result->fetch_assoc();
-            $_SESSION['user_info']['sessions'] = $refresh_row['sessions_remaining'];
-            $refresh_count_stmt->close();
-        }
-
-        $_SESSION['session_started'] = true;
-        $_SESSION['session_start_time'] = time();
-    } else {
-        $error = "No sessions remaining.";
-    }
-}
-
-// End session logic
-if (isset($_POST['end_session'])) {
-    if (isset($_SESSION['session_started']) && $_SESSION['session_started']) {
-        // Update session_end timestamp
-        $update_session_sql = "UPDATE user_sessions 
-                               SET session_end = NOW() 
-                               WHERE user_id = ? 
-                               AND session_end IS NULL 
-                               ORDER BY session_start DESC 
-                               LIMIT 1";
-        $update_stmt = $conn->prepare($update_session_sql);
-        if ($update_stmt) {
-            $update_stmt->bind_param("s", $user_info['id']);
-            $update_stmt->execute();
-            $update_stmt->close();
-        } else {
-            die("Error preparing statement: " . $conn->error);
-        }
-
-        // Update session variables
-        $_SESSION['session_started'] = false;
-        $session_duration = time() - $_SESSION['session_start_time'];
-    } else {
-        $error = "No active session to end.";
-    }
-}
-
-$idno = htmlspecialchars($_SESSION['idno']);
+// Update session info in $_SESSION
+$_SESSION['user_info'] = [
+    'idno' => $user_info['idno'],
+    'firstname' => $user_info['firstname'],
+    'lastname' => $user_info['lastname'],
+    'course' => $user_info['course'],
+    'year' => $user_info['year'],
+    'email' => $user_info['email'],
+    'sessions' => $remaining_sessions,
+    'role' => $user_info['role']
+];
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -117,7 +72,7 @@ $idno = htmlspecialchars($_SESSION['idno']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <style>
-        body {
+      body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
@@ -221,35 +176,29 @@ $idno = htmlspecialchars($_SESSION['idno']);
             color: #444;
             line-height: 1.5;
         }
-
-        .session-buttons {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .session-buttons button {
-            padding: 10px 20px;
-            border: none;
+        .session-status {
+            margin-top: 10px;
+            padding: 10px;
             border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
+            text-align: center;
         }
 
-        .session-buttons button.start {
-            background-color: #4CAF50;
-            color: white;
+        .session-active {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
         }
 
-        .session-buttons button.end {
-            background-color: #f44336;
-            color: white;
+        .session-inactive {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
         }
 
-        .session-buttons button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        .session-note {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -264,7 +213,7 @@ $idno = htmlspecialchars($_SESSION['idno']);
             <a href="sitin.php">Sit-In History</a>
         </div>
         <div>
-            <span>Welcome, <?php echo $idno; ?>!</span>
+            <span>Welcome, <?php echo htmlspecialchars($idno); ?>!</span>
             <a href="logout.php" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
         </div>
     </div>
@@ -272,22 +221,24 @@ $idno = htmlspecialchars($_SESSION['idno']);
     <div class="dashboard">
         <div class="user-section">
             <div class="card">
-                <img src="ok.jpg">
+                <img src="ok.jpg" alt="User Image">
             </div>
             <div class="user-info-container">
                 <div class="user-info">
-                    <p><strong>IDNO:</strong> <?php echo $user_info['idno']; ?></p>
-                    <p><strong>Name:</strong> <?php echo $user_info['firstname'] . ' ' . $user_info['lastname']; ?></p>
-                    <p><strong>Course:</strong> <?php echo $user_info['course']; ?></p>
-                    <p><strong>Year Level:</strong> <?php echo $user_info['year']; ?></p>
-                    <p><strong>Email:</strong> <?php echo $user_info['email']; ?></p>
-                    <p><strong>Sessions Remaining:</strong> <?php echo $_SESSION['user_info']['sessions']; ?></p>
+                    <p><strong>IDNO:</strong> <?php echo htmlspecialchars($user_info['idno']); ?></p>
+                    <p><strong>Name:</strong> <?php echo htmlspecialchars($user_info['firstname'] . ' ' . $user_info['lastname']); ?></p>
+                    <p><strong>Course:</strong> <?php echo htmlspecialchars($user_info['course']); ?></p>
+                    <p><strong>Year Level:</strong> <?php echo htmlspecialchars($user_info['year']); ?></p>
+                    <p><strong>Email:</strong> <?php echo htmlspecialchars($user_info['email']); ?></p>
+                    <p><strong>Sessions Remaining:</strong> <?php echo $remaining_sessions; ?> / <?php echo $max_sessions; ?></p>
                 </div>
-                <div class="session-buttons">
-                    <form method="POST" action="home.php">
-                        <button type="submit" name="start_session" class="start" <?php echo ($_SESSION['user_info']['sessions'] <= 0 || isset($_SESSION['session_started'])) ? 'disabled' : ''; ?>>Start Session</button>
-                        <button type="submit" name="end_session" class="end" <?php echo !isset($_SESSION['session_started']) ? 'disabled' : ''; ?>>End Session</button>
-                    </form>
+                <div class="session-status <?php echo $is_session_active ? 'session-active' : 'session-inactive'; ?>">
+                    <?php 
+                    echo $is_session_active 
+                        ? "Session Active" 
+                        : "Session Inactive"; 
+                    ?>
+                    <div class="session-note">*Session controlled by admin</div>
                 </div>
             </div>
         </div>
@@ -316,7 +267,7 @@ $idno = htmlspecialchars($_SESSION['idno']);
                             </ul>
                         </li>
                         <li>8. Chewing gum, eating, drinking, smoking, and other forms inside the lab are prohibited.</li>
-                        <li>9. Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures.</li>
+                        <li>9. Anyone causing a continual disturbance will be asked to leave the lab.</li>
                         <li>10. Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.</li>
                         <li>11. For serious offenses, the lab personnel may call the Civil Security Office (CSU) for assistance.</li>
                         <li>12. Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant, or instructor immediately.</li>
@@ -327,3 +278,7 @@ $idno = htmlspecialchars($_SESSION['idno']);
     </div>
 </body>
 </html>
+
+<?php
+$conn->close();
+?>

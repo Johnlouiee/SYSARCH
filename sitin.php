@@ -12,7 +12,7 @@ $idno = $_SESSION['idno']; // Get the logged-in student's IDNO
 include 'db_connect.php'; // Include your database connection file
 
 // Fetch sit-in history for the logged-in student
-$sql = "SELECT *, TIMESTAMPDIFF(MINUTE, session_start, session_end) AS duration FROM sit_in_history WHERE user_id = ? ORDER BY session_start DESC";
+$sql = "SELECT *, status FROM sit_in_history WHERE user_id = ? ORDER BY session_start DESC";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Error preparing query: " . $conn->error);
@@ -133,6 +133,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
         .header a:hover {
             text-decoration: underline;
         }
+        .status {
+            font-weight: bold;
+        }
+        .status.pending {
+            color: #ffc107; /* Yellow for pending */
+        }
+        .status.accepted {
+            color: #28a745; /* Green for accepted */
+        }
+        .status.declined {
+            color: #dc3545; /* Red for declined */
+        }
     </style>
 </head>
 <body>
@@ -159,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Duration (Minutes)</th>
+                    <th>Status</th>
                     <th>Location</th>
                     <th>Feedback</th>
                 </tr>
@@ -168,7 +180,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_feedback"])) {
                 <?php while ($row = $sit_in_history->fetch_assoc()): ?>
                     <tr>
                         <td><?php echo date("F j, Y, g:i a", strtotime($row['session_start'])); ?></td>
-                        <td><?php echo isset($row['duration']) ? $row['duration'] : 'N/A'; ?></td>
+                        <td>
+                            <span class="status <?php echo $row['status']; ?>">
+                                <?php echo ucfirst($row['status']); ?>
+                            </span>
+                        </td>
                         <td><?php echo isset($row['lab']) ? $row['lab'] : 'N/A'; ?></td>
                         <td>
                             <!-- Feedback Form -->

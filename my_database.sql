@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 09, 2025 at 03:38 PM
+-- Generation Time: Mar 17, 2025 at 02:15 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -40,7 +40,8 @@ CREATE TABLE `announcements` (
 
 INSERT INTO `announcements` (`id`, `title`, `content`, `created_at`) VALUES
 (1, 'ICT CONGRESS', 'BUY NOW', '2025-03-02 12:19:27'),
-(2, 'ako', 'asda', '2025-03-02 12:24:40');
+(2, 'ako', 'asda', '2025-03-02 12:24:40'),
+(3, 'ict ', 'buy now', '2025-03-11 11:52:50');
 
 -- --------------------------------------------------------
 
@@ -56,6 +57,15 @@ CREATE TABLE `feedback` (
   `comments` text NOT NULL,
   `submitted_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `feedback`
+--
+
+INSERT INTO `feedback` (`id`, `user_id`, `sit_in_id`, `rating`, `comments`, `submitted_at`) VALUES
+(1, '1010', 2, 0, 'aaaa', '2025-03-10 08:41:08'),
+(2, '1010', 8, 0, 'opaw', '2025-03-11 20:34:36'),
+(3, '1010', 17, 0, 'thanks', '2025-03-17 21:10:14');
 
 -- --------------------------------------------------------
 
@@ -81,6 +91,31 @@ CREATE TABLE `profiles` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `reservations`
+--
+
+CREATE TABLE `reservations` (
+  `id` int(11) NOT NULL,
+  `user_id` varchar(50) NOT NULL,
+  `student_name` varchar(100) NOT NULL,
+  `purpose` varchar(255) NOT NULL,
+  `lab` varchar(50) NOT NULL,
+  `time_in` time NOT NULL,
+  `reservation_date` date NOT NULL,
+  `remaining_session` int(11) NOT NULL,
+  `status` enum('Pending','Accepted','Declined') DEFAULT 'Pending'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reservations`
+--
+
+INSERT INTO `reservations` (`id`, `user_id`, `student_name`, `purpose`, `lab`, `time_in`, `reservation_date`, `remaining_session`, `status`) VALUES
+(1, '1010', 'john louie purisima', 'Java', '25', '10:06:00', '0000-00-00', 26, 'Declined');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sit_in_history`
 --
 
@@ -89,20 +124,22 @@ CREATE TABLE `sit_in_history` (
   `user_id` varchar(50) NOT NULL,
   `purpose` varchar(255) NOT NULL,
   `lab` varchar(255) NOT NULL,
-  `remaining_sessions` float DEFAULT NULL,
   `session_start` datetime NOT NULL,
   `session_end` datetime DEFAULT NULL,
-  `date_time` datetime DEFAULT NULL
+  `date_time` datetime DEFAULT NULL,
+  `status` enum('pending','accepted','declined') DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `sit_in_history`
 --
 
-INSERT INTO `sit_in_history` (`id`, `user_id`, `purpose`, `lab`, `remaining_sessions`, `session_start`, `session_end`, `date_time`) VALUES
-(1, '1010', 'Java', '524', 30, '2025-03-09 10:52:57', NULL, NULL),
-(2, '1010', 'C#', '555', 30, '2025-03-09 10:54:34', NULL, NULL),
-(3, '2020', 'C programming', '555', 30, '2025-03-09 21:24:07', NULL, NULL);
+INSERT INTO `sit_in_history` (`id`, `user_id`, `purpose`, `lab`, `session_start`, `session_end`, `date_time`, `status`) VALUES
+(13, '1010', 'C#', '10', '2025-03-17 19:49:08', '2025-03-17 19:49:16', '2025-03-17 19:49:16', 'pending'),
+(14, '1010', 'C#', '5', '2025-03-17 20:07:04', '2025-03-17 20:13:11', NULL, 'pending'),
+(15, '1010', 'C programming', '524', '2025-03-17 20:13:26', '2025-03-17 20:13:28', NULL, 'pending'),
+(16, '1010', 'Java', '524', '2025-03-17 20:40:34', '2025-03-17 20:40:36', NULL, 'pending'),
+(17, '1010', 'Java', '555', '2025-03-17 20:44:24', NULL, NULL, 'pending');
 
 -- --------------------------------------------------------
 
@@ -130,8 +167,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `idno`, `lastname`, `firstname`, `middlename`, `course`, `year`, `email`, `role`, `sessions_remaining`) VALUES
-(1, '', '$2y$10$cAW8vGX0m39XbgC9IgAmeu6X9hZG6mijBRTgHGaA.T/2iK1k8JHM6', '1010', 'purisima', 'john', 'louie', 'BSIT', 1, 'purisimajohnlouie@gmail.com', 'student', 26),
-(2, '', '$2y$10$ZV/RlO3gQYyTHXKaxhnqvOgbW5UDY9PqSdv1cyYgEm/UGzOqFGEXq', '2020', 'abao', 'kagiron', 'gwapo', 'BSIT', 1, 'user@uc.com', 'admin', 30);
+(7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 30),
+(8, '', '$2y$10$PIuJTtHqBx5SOMtsp7D7uufI1cBrQ/5fgZs5CetXNGY5HOHzOdBXm', '2020', 'abao', 'opaw', 'pisot', 'BSIT', 4, 'user@uc.com', 'admin', 30);
 
 -- --------------------------------------------------------
 
@@ -145,20 +182,6 @@ CREATE TABLE `user_sessions` (
   `session_start` datetime NOT NULL,
   `session_end` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `user_sessions`
---
-
-INSERT INTO `user_sessions` (`id`, `user_id`, `session_start`, `session_end`) VALUES
-(1, 1, '2025-03-08 22:34:39', '2025-03-08 22:34:39'),
-(2, 1, '2025-03-08 22:37:13', '2025-03-08 22:37:14'),
-(3, 1, '2025-03-08 22:41:34', '2025-03-08 22:44:08'),
-(4, 1, '2025-03-08 22:41:39', '2025-03-08 22:41:40'),
-(5, 1, '2025-03-08 22:44:11', '2025-03-08 22:44:12'),
-(6, 1, '2025-03-08 22:44:17', '2025-03-08 22:44:19'),
-(7, 1, '2025-03-08 22:44:24', '2025-03-08 22:44:25'),
-(8, 1, '2025-03-08 22:44:34', '2025-03-08 22:44:35');
 
 --
 -- Indexes for dumped tables
@@ -180,6 +203,12 @@ ALTER TABLE `feedback`
 -- Indexes for table `profiles`
 --
 ALTER TABLE `profiles`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `reservations`
+--
+ALTER TABLE `reservations`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -211,13 +240,13 @@ ALTER TABLE `user_sessions`
 -- AUTO_INCREMENT for table `announcements`
 --
 ALTER TABLE `announcements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `feedback`
 --
 ALTER TABLE `feedback`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `profiles`
@@ -226,22 +255,28 @@ ALTER TABLE `profiles`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `reservations`
+--
+ALTER TABLE `reservations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `sit_in_history`
 --
 ALTER TABLE `sit_in_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `user_sessions`
 --
 ALTER TABLE `user_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables

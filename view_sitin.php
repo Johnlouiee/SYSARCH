@@ -2,30 +2,57 @@
 session_start();
 
 // Check if the user is logged in and is an admin
-if (!isset($_SESSION['user_info'])) {
-    header("Location: index.php");
-    exit();
-}
-
-if ($_SESSION['user_info']['role'] !== 'admin') {
+if (!isset($_SESSION['user_info']) || $_SESSION['user_info']['role'] !== 'admin') {
     header("Location: index.php");
     exit();
 }
 
 include 'db_connect.php';
 
-// Fetch active sit-in records (where session_end is NULL)
+// Pagination
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$per_page = 10; // Entries per page
+$offset = ($page - 1) * $per_page;
+
+// Search functionality
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
+// Fetch all sit-in records with search and pagination
 $sql = "SELECT sit_in_history.*, users.firstname, users.lastname 
         FROM sit_in_history 
         JOIN users ON sit_in_history.user_id = users.idno 
-        WHERE session_end IS NULL 
-        ORDER BY session_start DESC";
-$result = $conn->query($sql);
+        WHERE (sit_in_history.user_id LIKE ? OR users.firstname LIKE ? OR users.lastname LIKE ? OR sit_in_history.purpose LIKE ? OR sit_in_history.lab LIKE ?)
+        ORDER BY sit_in_history.session_start DESC 
+        LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Error preparing query: " . $conn->error);
+}
 
-// Fetch purpose usage data for the pie chart
+$search_term = "%$search%";
+$stmt->bind_param("sssssii", $search_term, $search_term, $search_term, $search_term, $search_term, $per_page, $offset);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Fetch total number of sit-in records for pagination
+$sql_total = "SELECT COUNT(*) as total 
+              FROM sit_in_history 
+              JOIN users ON sit_in_history.user_id = users.idno 
+              WHERE (sit_in_history.user_id LIKE ? OR users.firstname LIKE ? OR users.lastname LIKE ? OR sit_in_history.purpose LIKE ? OR sit_in_history.lab LIKE ?)";
+$stmt_total = $conn->prepare($sql_total);
+if (!$stmt_total) {
+    die("Error preparing query: " . $conn->error);
+}
+$stmt_total->bind_param("sssss", $search_term, $search_term, $search_term, $search_term, $search_term);
+$stmt_total->execute();
+$total_result = $stmt_total->get_result();
+$total_row = $total_result->fetch_assoc();
+$total_sitins = $total_row['total'];
+$total_pages = ceil($total_sitins / $per_page);
+
+// Fetch purpose usage data for the pie chart (all records)
 $sql_pie_purpose = "SELECT purpose, COUNT(*) as count 
                     FROM sit_in_history 
-                    WHERE session_end IS NULL 
                     GROUP BY purpose";
 $result_pie_purpose = $conn->query($sql_pie_purpose);
 
@@ -33,7 +60,6 @@ $labels_purpose = [];
 $data_purpose = [];
 $colors_purpose = [];
 
-// Assign unique colors to each purpose
 $colorPalette = [
     'rgba(255, 99, 132, 0.6)', // Red
     'rgba(54, 162, 235, 0.6)', // Blue
@@ -45,10 +71,27 @@ $colorPalette = [
 while ($row = $result_pie_purpose->fetch_assoc()) {
     $labels_purpose[] = $row['purpose'];
     $data_purpose[] = $row['count'];
-    $colors_purpose[] = $colorPalette[array_rand($colorPalette)]; // Assign a random color from the palette
+    $colors_purpose[] = $colorPalette[array_rand($colorPalette)];
+}
+
+$error = null;
+if (isset($_GET['error'])) {
+    switch ($_GET['error']) {
+        case 'active_session_exists':
+            $error = "This student already has an active sit-in session.";
+            break;
+        case 'student_not_found':
+            $error = "Student not found.";
+            break;
+        case 'database_error':
+            $error = "A database error occurred.";
+            break;
+        default:
+            $error = "An unknown error occurred.";
+            break;
+    }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,6 +111,24 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
             text-align: center;
             margin-bottom: 20px;
             color: #333;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .search-bar input[type="text"] {
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-bar button {
+            padding: 8px 16px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
         }
         table {
             width: 100%;
@@ -134,18 +195,16 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
 <body>
 <div class="header">
     <div>
-        <h1> College of Computer Studies Admin</h1>
+        <h2> College of Computer Studies Admin</h2>
         <a href="admin_home.php">Home</a>
-        <a href="#" id="searchLink">Search</a> 
+        <a href="search_student.php">Search</a>
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
-        <a href="create_announcement.php">Create Announcement</a>
-        <a href="view_statistics.php">View Statistics</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
     </div>
-   
+    <a href="logout.php" class="logout-btn">Logout</a>
 </div>
     <h1>Current Sit-in Records</h1>
 
