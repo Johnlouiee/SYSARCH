@@ -24,32 +24,44 @@ $result = $stmt->get_result();
 $user_info = $result->fetch_assoc();
 $stmt->close();
 
-// Initialize or refresh session count
-$session_count_sql = "SELECT sessions_remaining FROM users WHERE idno = ?";
-$session_count_stmt = $conn->prepare($session_count_sql);
-$session_count_stmt->bind_param("s", $idno);
-$session_count_stmt->execute();
-$session_count_result = $session_count_stmt->get_result();
-$session_count_row = $session_count_result->fetch_assoc();
+// Construct full name (firstname middlename lastname)
+$full_name_parts = [
+    $user_info['firstname'],
+    $user_info['middlename'],
+    $user_info['lastname']
+];
+$full_name = implode(' ', array_filter($full_name_parts));
 
-if (!isset($_SESSION['user_info'])) {
-    $_SESSION['user_info'] = [];
-}
-$_SESSION['user_info']['sessions'] = $session_count_row['sessions_remaining'] ?? 30;
-$session_count_stmt->close();
+// Calculate remaining sessions based on sit_in_history (same as home.php)
+$completed_sessions_sql = "SELECT COUNT(*) as completed_sessions 
+                          FROM sit_in_history 
+                          WHERE user_id = ? AND session_end IS NOT NULL";
+$completed_stmt = $conn->prepare($completed_sessions_sql);
+$completed_stmt->bind_param("s", $idno);
+$completed_stmt->execute();
+$completed_result = $completed_stmt->get_result();
+$completed_row = $completed_result->fetch_assoc();
+$completed_sessions = $completed_row['completed_sessions'];
+$completed_stmt->close();
+
+$max_sessions = 30;
+$remaining_sessions = max(0, $max_sessions - $completed_sessions);
+
+// Update session info
+$_SESSION['user_info']['sessions'] = $remaining_sessions;
 
 $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if ($_SESSION['user_info']['sessions'] > 0) {
+    if ($remaining_sessions > 0) {
         $user_id = $_POST['idNumber'];
         $student_name = $_POST['studentName'];
         $purpose = $_POST['purpose'];
         $lab = $_POST['lab'];
-        $time_in = $_POST['timeIn'];
-        $reservation_date = date('Y-m-d', strtotime($_POST['date'])); // Convert to MySQL date format
-        $remaining_session = $_POST['remainingSession'];
+        $time_in = date('H:i:s', strtotime($_POST['timeIn']));
+        $reservation_date = $_POST['date'];
+        $remaining_session = $remaining_sessions;
 
         // Insert reservation as "Pending"
         $sql = "INSERT INTO reservations (user_id, student_name, purpose, lab, time_in, reservation_date, remaining_session, status) 
@@ -194,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="text" id="idNumber" name="idNumber" value="<?= htmlspecialchars($user_info['idno'] ?? '') ?>" readonly>
 
         <label for="studentName">Student Name:</label>
-        <input type="text" id="studentName" name="studentName" value="<?= htmlspecialchars($user_info['name'] ?? '') ?>" readonly>
+        <input type="text" id="studentName" name="studentName" value="<?= htmlspecialchars($full_name) ?>" readonly>
 
         <label for="purpose">Purpose:</label>
         <input type="text" id="purpose" name="purpose" required>
@@ -206,10 +218,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="text" id="timeIn" name="timeIn" placeholder="hh:mm" required>
 
         <label for="date">Date:</label>
-        <input type="text" id="date" name="date" placeholder="dd/mm/yyyy" required>
+        <input type="date" id="date" name="date" required>
 
         <label for="remainingSession">Remaining Session:</label>
-        <input type="text" id="remainingSession" name="remainingSession" value="<?= htmlspecialchars($_SESSION['user_info']['sessions'] ?? 30) ?>" readonly>
+        <input type="text" id="remainingSession" name="remainingSession" value="<?= htmlspecialchars($remaining_sessions) ?>" readonly>
 
         <button type="submit">Reserve</button>
     </form>
