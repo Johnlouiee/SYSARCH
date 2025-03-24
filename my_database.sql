@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 17, 2025 at 02:15 PM
+-- Generation Time: Mar 22, 2025 at 12:38 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -111,7 +111,9 @@ CREATE TABLE `reservations` (
 --
 
 INSERT INTO `reservations` (`id`, `user_id`, `student_name`, `purpose`, `lab`, `time_in`, `reservation_date`, `remaining_session`, `status`) VALUES
-(1, '1010', 'john louie purisima', 'Java', '25', '10:06:00', '0000-00-00', 26, 'Declined');
+(1, '1010', 'john louie purisima', 'Java', '25', '10:06:00', '0000-00-00', 26, 'Declined'),
+(2, '1010', 'johnlouie nacaytuna purisima', 'APS.NET', '524', '10:06:00', '2025-03-20', 30, 'Declined'),
+(3, '1010', 'johnlouie nacaytuna purisima', 'APS.NET', '55', '10:06:00', '2025-03-20', 30, 'Accepted');
 
 -- --------------------------------------------------------
 
@@ -139,7 +141,11 @@ INSERT INTO `sit_in_history` (`id`, `user_id`, `purpose`, `lab`, `session_start`
 (14, '1010', 'C#', '5', '2025-03-17 20:07:04', '2025-03-17 20:13:11', NULL, 'pending'),
 (15, '1010', 'C programming', '524', '2025-03-17 20:13:26', '2025-03-17 20:13:28', NULL, 'pending'),
 (16, '1010', 'Java', '524', '2025-03-17 20:40:34', '2025-03-17 20:40:36', NULL, 'pending'),
-(17, '1010', 'Java', '555', '2025-03-17 20:44:24', NULL, NULL, 'pending');
+(17, '1010', 'Java', '555', '2025-03-17 20:44:24', '2025-03-20 09:58:30', NULL, 'pending'),
+(18, '1010', 'APS.NET', '5', '2025-03-20 09:59:35', '2025-03-20 09:59:39', NULL, 'pending'),
+(19, '1010', 'java', '555', '2025-03-20 09:59:58', '2025-03-20 10:00:02', NULL, 'pending'),
+(20, '1010', 'Java', '555', '2025-03-20 10:03:10', '2025-03-20 10:03:16', NULL, 'pending'),
+(21, '1010', 'APS.NET', '555', '2025-03-22 19:35:26', '2025-03-22 19:35:27', NULL, 'pending');
 
 -- --------------------------------------------------------
 
@@ -167,7 +173,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `idno`, `lastname`, `firstname`, `middlename`, `course`, `year`, `email`, `role`, `sessions_remaining`) VALUES
-(7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 30),
+(7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 29),
 (8, '', '$2y$10$PIuJTtHqBx5SOMtsp7D7uufI1cBrQ/5fgZs5CetXNGY5HOHzOdBXm', '2020', 'abao', 'opaw', 'pisot', 'BSIT', 4, 'user@uc.com', 'admin', 30);
 
 -- --------------------------------------------------------
@@ -258,13 +264,13 @@ ALTER TABLE `profiles`
 -- AUTO_INCREMENT for table `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sit_in_history`
 --
 ALTER TABLE `sit_in_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `users`

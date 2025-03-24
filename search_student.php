@@ -187,7 +187,13 @@ if (isset($_GET['search_idno'])) {
                 </div>
                 <div class="form-group">
                     <label for="purpose">Purpose:</label>
-                      <input type="text" class="form-control" id="purpose" name="purpose" required>
+                      <select name="purpose" class="form-control" id="purpose" required>
+            <option value="ASP">ASP.NET</option>
+            <option value="PHP">PHP</option>
+            <option value="C">C Programming</option>
+            <option value="C#">C#</option>
+            <option value="JAVA">JAVA</option>
+        </select>
                 </div>
                 <div class="form-group">
                     <label for="lab">Lab:</label>
