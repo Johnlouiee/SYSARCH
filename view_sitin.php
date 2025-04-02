@@ -74,6 +74,26 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
     $colors_purpose[] = $colorPalette[array_rand($colorPalette)];
 }
 
+// Fetch data for leaderboards
+// Most Active Participants (by number of sit-ins)
+$sql_most_active = "SELECT users.idno, users.firstname, users.lastname, COUNT(sit_in_history.id) as sit_in_count
+                    FROM sit_in_history
+                    JOIN users ON sit_in_history.user_id = users.idno
+                    GROUP BY users.idno, users.firstname, users.lastname
+                    ORDER BY sit_in_count DESC
+                    LIMIT 5";
+$result_most_active = $conn->query($sql_most_active);
+
+// Top Performing Participants (by longest total time spent)
+$sql_top_performing = "SELECT users.idno, users.firstname, users.lastname, 
+                       SUM(TIMESTAMPDIFF(MINUTE, session_start, IFNULL(session_end, NOW()))) as total_minutes
+                       FROM sit_in_history
+                       JOIN users ON sit_in_history.user_id = users.idno
+                       GROUP BY users.idno, users.firstname, users.lastname
+                       ORDER BY total_minutes DESC
+                       LIMIT 5";
+$result_top_performing = $conn->query($sql_top_performing);
+
 $error = null;
 if (isset($_GET['error'])) {
     switch ($_GET['error']) {
@@ -169,9 +189,9 @@ if (isset($_GET['error'])) {
             background-color: #d32f2f;
         }
         .chart-container {
-            width: 300px; /* Smaller width for the pie chart */
-            height: 300px; /* Smaller height for the pie chart */
-            margin: 20px auto; /* Center the chart */
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
         }
         .header {
             background-color: #333;
@@ -190,6 +210,53 @@ if (isset($_GET['error'])) {
         .header a:hover {
             text-decoration: underline;
         }
+        .leaderboard-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .leaderboard {
+            width: 45%;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .leaderboard h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+        .rank {
+            font-weight: bold;
+            color: #4CAF50;
+            width: 30px;
+        }
+        .student-info {
+            flex-grow: 1;
+            padding: 0 10px;
+        }
+        .score {
+            font-weight: bold;
+            color: #333;
+        }
+        .gold { color: #FFD700; }
+        .silver { color: #C0C0C0; }
+        .bronze { color: #CD7F32; }
     </style>
 </head>
 <body>
@@ -208,6 +275,67 @@ if (isset($_GET['error'])) {
 </div>
     <h1>Current Sit-in Records</h1>
 
+    <!-- Leaderboards Section -->
+    <div class="leaderboard-container">
+        <!-- Most Active Participants Leaderboard -->
+        <div class="leaderboard">
+            <h2>Most Active Participants</h2>
+            <?php if ($result_most_active->num_rows > 0): ?>
+                <?php $rank = 1; ?>
+                <?php while ($row = $result_most_active->fetch_assoc()): ?>
+                    <div class="leaderboard-item">
+                        <div class="rank">
+                            <?php 
+                                if ($rank == 1) echo '<span class="gold">1st</span>';
+                                elseif ($rank == 2) echo '<span class="silver">2nd</span>';
+                                elseif ($rank == 3) echo '<span class="bronze">3rd</span>';
+                                else echo $rank . 'th';
+                            ?>
+                        </div>
+                        <div class="student-info">
+                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?> (<?= htmlspecialchars($row['idno']) ?>)
+                        </div>
+                        <div class="score">
+                            <?= htmlspecialchars($row['sit_in_count']) ?> sessions
+                        </div>
+                    </div>
+                    <?php $rank++; ?>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="no-records">No data available</div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Top Performing Participants Leaderboard -->
+        <div class="leaderboard">
+            <h2>Top Performing Participants</h2>
+            <?php if ($result_top_performing->num_rows > 0): ?>
+                <?php $rank = 1; ?>
+                <?php while ($row = $result_top_performing->fetch_assoc()): ?>
+                    <div class="leaderboard-item">
+                        <div class="rank">
+                            <?php 
+                                if ($rank == 1) echo '<span class="gold">1st</span>';
+                                elseif ($rank == 2) echo '<span class="silver">2nd</span>';
+                                elseif ($rank == 3) echo '<span class="bronze">3rd</span>';
+                                else echo $rank . 'th';
+                            ?>
+                        </div>
+                        <div class="student-info">
+                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?> (<?= htmlspecialchars($row['idno']) ?>)
+                        </div>
+                        <div class="score">
+                            <?= htmlspecialchars(round($row['total_minutes'] / 60, 1)) ?> hours
+                        </div>
+                    </div>
+                    <?php $rank++; ?>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="no-records">No data available</div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Pie Chart for Purpose Usage -->
     <div class="chart-container">
         <canvas id="purposeUsageChart"></canvas>
@@ -225,7 +353,6 @@ if (isset($_GET['error'])) {
                 <th>Login Time</th>
                 <th>Logout Time</th>
                 <th>Date</th>
-    
             </tr>
         </thead>
         <tbody>
@@ -244,9 +371,6 @@ if (isset($_GET['error'])) {
                         <td><?= htmlspecialchars($row['session_start']) ?></td> <!-- Login Time -->
                         <td><?= htmlspecialchars($row['session_end']) ?></td> <!-- Logout Time -->
                         <td><?= htmlspecialchars($date) ?></td> <!-- Date -->
-                       
-                            </form>
-                        
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
@@ -274,7 +398,7 @@ if (isset($_GET['error'])) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // Allow the chart to resize
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'top',

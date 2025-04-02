@@ -14,6 +14,69 @@ if ($_SESSION['user_info']['role'] !== 'admin') {
 
 include 'db_connect.php';
 
+// Handle AJAX requests for announcements
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+
+    if ($_POST['action'] === 'get_all_announcements') {
+        $sql = "SELECT * FROM announcements ORDER BY created_at DESC";
+        $result = $conn->query($sql);
+        $announcements = [];
+        while ($row = $result->fetch_assoc()) {
+            $announcements[] = $row;
+        }
+        echo json_encode($announcements);
+        exit();
+    }
+
+    if ($_POST['action'] === 'get_announcement' && isset($_POST['id'])) {
+        $id = $_POST['id'];
+        $sql = "SELECT * FROM announcements WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $announcement = $result->fetch_assoc();
+        if ($announcement) {
+            echo json_encode(['status' => 'success', 'announcement' => $announcement]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Announcement not found']);
+        }
+        $stmt->close();
+        exit();
+    }
+
+    if ($_POST['action'] === 'update_announcement' && isset($_POST['id'])) {
+        $id = $_POST['id'];
+        $title = $_POST['title'];
+        $content = $_POST['content'];
+        $sql = "UPDATE announcements SET title = ?, content = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssi", $title, $content, $id);
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update announcement']);
+        }
+        $stmt->close();
+        exit();
+    }
+
+    if ($_POST['action'] === 'delete_announcement' && isset($_POST['id'])) {
+        $id = $_POST['id'];
+        $sql = "DELETE FROM announcements WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete announcement']);
+        }
+        $stmt->close();
+        exit();
+    }
+}
+
 // Fetch total users
 $sql = "SELECT COUNT(*) as total_users FROM users";
 $result = $conn->query($sql);
@@ -303,7 +366,7 @@ $announcements_result = $conn->query($announcements_sql);
 <!-- Search Modal -->
 <div id="searchModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeModal('searchModal')">&times;</span>
+        <span class="close" onclick="closeModal('searchModal')">×</span>
         <h3>Search Student</h3>
         <form id="searchForm">
             <div class="form-group">
@@ -319,7 +382,7 @@ $announcements_result = $conn->query($announcements_sql);
 <!-- Create Announcement Modal -->
 <div id="createAnnouncementModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeModal('createAnnouncementModal')">&times;</span>
+        <span class="close" onclick="closeModal('createAnnouncementModal')">×</span>
         <h3>Create Announcement</h3>
         <form id="createAnnouncementForm">
             <div class="form-group mb-3">
@@ -338,11 +401,31 @@ $announcements_result = $conn->query($announcements_sql);
 <!-- View All Announcements Modal -->
 <div id="viewAnnouncementsModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeModal('viewAnnouncementsModal')">&times;</span>
+        <span class="close" onclick="closeModal('viewAnnouncementsModal')">×</span>
         <h3>All Announcements</h3>
         <div id="allAnnouncementsList" class="announcements-list">
             <!-- Announcements will be loaded here -->
         </div>
+    </div>
+</div>
+
+<!-- Edit Announcement Modal -->
+<div id="editAnnouncementModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('editAnnouncementModal')">×</span>
+        <h3>Edit Announcement</h3>
+        <form id="editAnnouncementForm">
+            <input type="hidden" id="edit_id" name="id">
+            <div class="form-group mb-3">
+                <label for="edit_title">Title:</label>
+                <input type="text" id="edit_title" name="title" class="form-control" required>
+            </div>
+            <div class="form-group mb-3">
+                <label for="edit_content">Content:</label>
+                <textarea id="edit_content" name="content" class="form-control" rows="5" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Announcement</button>
+        </form>
     </div>
 </div>
 
@@ -359,6 +442,8 @@ $announcements_result = $conn->query($announcements_sql);
         document.getElementById(modalId).style.display = "none";
         if (modalId === 'createAnnouncementModal') {
             document.getElementById("createAnnouncementForm").reset();
+        } else if (modalId === 'editAnnouncementModal') {
+            document.getElementById("editAnnouncementForm").reset();
         }
     }
 
@@ -400,7 +485,6 @@ $announcements_result = $conn->query($announcements_sql);
             if (data.status === "success") {
                 alert("Announcement created successfully!");
                 closeModal('createAnnouncementModal');
-                // Reload the page to show the new announcement
                 window.location.reload();
             } else {
                 alert("Error: " + data.message);
@@ -414,7 +498,13 @@ $announcements_result = $conn->query($announcements_sql);
 
     // Function to load all announcements
     function loadAllAnnouncements() {
-        fetch("get_announcements.php")
+        fetch(window.location.href, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "action=get_all_announcements"
+        })
         .then(response => response.json())
         .then(data => {
             const announcementsList = document.getElementById("allAnnouncementsList");
@@ -428,8 +518,29 @@ $announcements_result = $conn->query($announcements_sql);
                         <div class="announcement-title">${announcement.title}</div>
                         <div class="announcement-content">${announcement.content}</div>
                         <div class="announcement-date">Posted on: ${new Date(announcement.created_at).toLocaleString()}</div>
+                        <div class="mt-2">
+                            <button class="btn btn-primary btn-sm edit-btn" data-id="${announcement.id}">Edit</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="${announcement.id}">Delete</button>
+                        </div>
                     `;
                     announcementsList.appendChild(announcementDiv);
+                });
+
+                // Add event listeners for edit and delete buttons
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        openEditModal(id);
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        if (confirm('Are you sure you want to delete this announcement?')) {
+                            deleteAnnouncement(id);
+                        }
+                    });
                 });
             } else {
                 announcementsList.innerHTML = "<p>No announcements available.</p>";
@@ -439,6 +550,83 @@ $announcements_result = $conn->query($announcements_sql);
         .catch(error => {
             console.error("Error:", error);
             alert("An error occurred while loading announcements.");
+        });
+    }
+
+    // Function to open edit modal and populate it with announcement data
+    function openEditModal(id) {
+        fetch(window.location.href, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `action=get_announcement&id=${id}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                document.getElementById('edit_id').value = data.announcement.id;
+                document.getElementById('edit_title').value = data.announcement.title;
+                document.getElementById('edit_content').value = data.announcement.content;
+                openModal('editAnnouncementModal');
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while fetching announcement data.");
+        });
+    }
+
+    // Handle edit announcement form submission
+    document.getElementById("editAnnouncementForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(this);
+        formData.append('action', 'update_announcement');
+
+        fetch(window.location.href, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("Announcement updated successfully!");
+                closeModal('editAnnouncementModal');
+                loadAllAnnouncements();
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while updating the announcement.");
+        });
+    });
+
+    // Function to delete an announcement
+    function deleteAnnouncement(id) {
+        fetch(window.location.href, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `action=delete_announcement&id=${id}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("Announcement deleted successfully!");
+                loadAllAnnouncements();
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while deleting the announcement.");
         });
     }
 
