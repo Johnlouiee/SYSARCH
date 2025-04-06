@@ -281,6 +281,89 @@ $announcements_result = $conn->query($announcements_sql);
             font-size: 0.9em;
             color: #999;
         }
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .leaderboard-section {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .leaderboard {
+            margin-top: 15px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .leaderboard-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .rank {
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .gold { color: #FFD700; }
+        .silver { color: #C0C0C0; }
+        .bronze { color: #CD7F32; }
+
+        .student-info {
+            flex: 1;
+            margin: 0 15px;
+        }
+
+        .points-badge {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            margin-left: 8px;
+        }
+
+        .points-progress {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 8px;
+        }
+
+        .score {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .sub-score {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+
+        .no-records {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -357,6 +440,96 @@ $announcements_result = $conn->query($announcements_sql);
                     </div>
                 <?php else: ?>
                     <p>No announcements yet.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Points Leaderboard -->
+        <div class="leaderboard-section">
+            <h2>Top Points Earners</h2>
+            <?php
+            // Fetch top points earners
+            $points_sql = "SELECT u.firstname, u.lastname, up.points, 
+                          FLOOR(up.points / 3) as free_sessions_earned,
+                          (up.points % 3) as points_towards_next
+                          FROM user_points up
+                          JOIN users u ON up.user_id = u.idno
+                          ORDER BY up.points DESC
+                          LIMIT 10";
+            $points_result = $conn->query($points_sql);
+            ?>
+            <div class="leaderboard">
+                <?php if ($points_result->num_rows > 0): ?>
+                    <?php $rank = 1; ?>
+                    <?php while ($row = $points_result->fetch_assoc()): ?>
+                        <div class="leaderboard-item">
+                            <div class="rank">
+                                <?php 
+                                    if ($rank == 1) echo '<span class="gold">1st</span>';
+                                    elseif ($rank == 2) echo '<span class="silver">2nd</span>';
+                                    elseif ($rank == 3) echo '<span class="bronze">3rd</span>';
+                                    else echo $rank . 'th';
+                                ?>
+                            </div>
+                            <div class="student-info">
+                                <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?>
+                                <span class="points-badge"><?= htmlspecialchars($row['points']) ?> pts</span>
+                                <span class="points-progress">(<?= htmlspecialchars($row['points_towards_next']) ?>/3 for next free session)</span>
+                            </div>
+                            <div class="score">
+                                <?= htmlspecialchars($row['free_sessions_earned']) ?> free sessions earned
+                            </div>
+                        </div>
+                        <?php $rank++; ?>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="no-records">No points data available</div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Time Spent Leaderboard -->
+        <div class="leaderboard-section">
+            <h2>Top Time Spent</h2>
+            <?php
+            // Fetch top time spent
+            $time_sql = "SELECT u.firstname, u.lastname, 
+                        SUM(TIMESTAMPDIFF(HOUR, sh.session_start, COALESCE(sh.session_end, NOW()))) as total_hours,
+                        COUNT(DISTINCT DATE(sh.session_start)) as total_days
+                        FROM sit_in_history sh
+                        JOIN users u ON sh.user_id = u.idno
+                        GROUP BY u.idno, u.firstname, u.lastname
+                        ORDER BY total_hours DESC
+                        LIMIT 10";
+            $time_result = $conn->query($time_sql);
+            ?>
+            <div class="leaderboard">
+                <?php if ($time_result->num_rows > 0): ?>
+                    <?php $rank = 1; ?>
+                    <?php while ($row = $time_result->fetch_assoc()): ?>
+                        <div class="leaderboard-item">
+                            <div class="rank">
+                                <?php 
+                                    if ($rank == 1) echo '<span class="gold">1st</span>';
+                                    elseif ($rank == 2) echo '<span class="silver">2nd</span>';
+                                    elseif ($rank == 3) echo '<span class="bronze">3rd</span>';
+                                    else echo $rank . 'th';
+                                ?>
+                            </div>
+                            <div class="student-info">
+                                <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?>
+                            </div>
+                            <div class="score">
+                                <?= htmlspecialchars($row['total_hours']) ?> hours
+                                <span class="sub-score">(<?= htmlspecialchars($row['total_days']) ?> days)</span>
+                            </div>
+                        </div>
+                        <?php $rank++; ?>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="no-records">No time data available</div>
                 <?php endif; ?>
             </div>
         </div>

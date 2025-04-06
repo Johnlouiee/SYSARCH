@@ -291,6 +291,45 @@ if (isset($_GET['error'])) {
             color: #4CAF50;
             font-weight: bold;
         }
+        .export-buttons {
+            margin: 20px 0;
+            text-align: right;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .export-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-left: 10px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .export-btn:hover {
+            opacity: 0.9;
+        }
+
+        .export-btn.excel {
+            background-color: #217346;
+        }
+
+        .export-btn.csv {
+            background-color: #4CAF50;
+        }
+
+        .export-btn.pdf {
+            background-color: #f44336;
+        }
+
+        .export-btn.docx {
+            background-color: #2b579a;
+        }
     </style>
 </head>
 <body>
@@ -309,69 +348,12 @@ if (isset($_GET['error'])) {
 </div>
     <h1>Current Sit-in Records</h1>
 
-    <!-- Leaderboards Section -->
-    <div class="leaderboard-container">
-        <!-- Most Active Participants Leaderboard -->
-        <div class="leaderboard">
-            <h2>Top Points Earners</h2>
-            <?php if ($result_most_active->num_rows > 0): ?>
-                <?php $rank = 1; ?>
-                <?php while ($row = $result_most_active->fetch_assoc()): ?>
-                    <div class="leaderboard-item">
-                        <div class="rank">
-                            <?php 
-                                if ($rank == 1) echo '<span class="gold">1st</span>';
-                                elseif ($rank == 2) echo '<span class="silver">2nd</span>';
-                                elseif ($rank == 3) echo '<span class="bronze">3rd</span>';
-                                else echo $rank . 'th';
-                            ?>
-                        </div>
-                        <div class="student-info">
-                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?>
-                            <span class="points-badge"><?= htmlspecialchars($row['total_points']) ?> pts</span>
-                            <span class="points-progress">(<?= htmlspecialchars($row['total_points'] % 3) ?>/3 for next free session)</span>
-                        </div>
-                        <div class="score">
-                            <?= htmlspecialchars($row['sit_in_count']) ?> sessions
-                        </div>
-                    </div>
-                    <?php $rank++; ?>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <div class="no-records">No data available</div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Top Performing Participants Leaderboard -->
-        <div class="leaderboard">
-            <h2>Top Time Spent</h2>
-            <?php if ($result_top_performing->num_rows > 0): ?>
-                <?php $rank = 1; ?>
-                <?php while ($row = $result_top_performing->fetch_assoc()): ?>
-                    <div class="leaderboard-item">
-                        <div class="rank">
-                            <?php 
-                                if ($rank == 1) echo '<span class="gold">1st</span>';
-                                elseif ($rank == 2) echo '<span class="silver">2nd</span>';
-                                elseif ($rank == 3) echo '<span class="bronze">3rd</span>';
-                                else echo $rank . 'th';
-                            ?>
-                        </div>
-                        <div class="student-info">
-                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?>
-                            <span class="points-badge"><?= htmlspecialchars($row['total_points']) ?> pts</span>
-                            <span class="points-progress">(<?= htmlspecialchars($row['total_points'] % 3) ?>/3 for next free session)</span>
-                        </div>
-                        <div class="score">
-                            <?= htmlspecialchars(round($row['total_minutes'] / 60, 1)) ?> hours
-                        </div>
-                    </div>
-                    <?php $rank++; ?>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <div class="no-records">No data available</div>
-            <?php endif; ?>
-        </div>
+    <!-- Export Buttons -->
+    <div class="export-buttons">
+        <a href="export_sitin.php?format=excel" class="export-btn excel">Export Excel</a>
+        <a href="export_sitin.php?format=csv" class="export-btn csv">Export CSV</a>
+        <a href="export_sitin.php?format=pdf" class="export-btn pdf">Export PDF</a>
+        <a href="export_sitin.php?format=docx" class="export-btn docx">Export DOCX</a>
     </div>
 
     <!-- Pie Chart for Purpose Usage -->
@@ -391,6 +373,7 @@ if (isset($_GET['error'])) {
                 <th>Login Time</th>
                 <th>Logout Time</th>
                 <th>Date</th>
+                <th>Points Earned</th>
             </tr>
         </thead>
         <tbody>
@@ -399,16 +382,27 @@ if (isset($_GET['error'])) {
                     <?php
                     // Extract date from session_start
                     $date = date('Y-m-d', strtotime($row['session_start']));
+                    
+                    // Calculate points based on session duration (1 point per hour)
+                    $points = 0;
+                    if ($row['session_end']) {
+                        $start = new DateTime($row['session_start']);
+                        $end = new DateTime($row['session_end']);
+                        $duration = $start->diff($end);
+                        $hours = $duration->h + ($duration->days * 24);
+                        $points = $hours; // 1 point per hour
+                    }
                     ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['id']) ?></td> <!-- Sit-in Number -->
-                        <td><?= htmlspecialchars($row['user_id']) ?></td> <!-- ID Number -->
-                        <td><?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?></td> <!-- Student Name -->
-                        <td><?= htmlspecialchars($row['purpose']) ?></td> <!-- Purpose -->
-                        <td><?= htmlspecialchars($row['lab']) ?></td> <!-- Lab -->
-                        <td><?= htmlspecialchars($row['session_start']) ?></td> <!-- Login Time -->
-                        <td><?= htmlspecialchars($row['session_end']) ?></td> <!-- Logout Time -->
-                        <td><?= htmlspecialchars($date) ?></td> <!-- Date -->
+                        <td><?= htmlspecialchars($row['id']) ?></td>
+                        <td><?= htmlspecialchars($row['user_id']) ?></td>
+                        <td><?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?></td>
+                        <td><?= htmlspecialchars($row['purpose']) ?></td>
+                        <td><?= htmlspecialchars($row['lab']) ?></td>
+                        <td><?= htmlspecialchars($row['session_start']) ?></td>
+                        <td><?= htmlspecialchars($row['session_end']) ?></td>
+                        <td><?= htmlspecialchars($date) ?></td>
+                        <td><?= $points ?> points</td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>

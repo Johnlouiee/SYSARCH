@@ -314,7 +314,7 @@ CREATE TABLE `user_points` (
   `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
-  CONSTRAINT `user_points_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`idno`)
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`idno`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -337,6 +337,22 @@ CREATE TABLE `lab_resources` (
 --
 ALTER TABLE `lab_resources`
   ADD KEY `lab` (`lab`);
+
+--
+-- Table structure for table `lab_schedules`
+--
+
+CREATE TABLE lab_schedules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    day_of_week VARCHAR(10) NOT NULL,
+    lab VARCHAR(50) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    subject VARCHAR(100) NOT NULL,
+    instructor VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 COMMIT;
 
