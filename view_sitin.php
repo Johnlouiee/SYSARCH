@@ -75,21 +75,26 @@ while ($row = $result_pie_purpose->fetch_assoc()) {
 }
 
 // Fetch data for leaderboards
-// Most Active Participants (by number of sit-ins)
-$sql_most_active = "SELECT users.idno, users.firstname, users.lastname, COUNT(sit_in_history.id) as sit_in_count
-                    FROM sit_in_history
-                    JOIN users ON sit_in_history.user_id = users.idno
-                    GROUP BY users.idno, users.firstname, users.lastname
-                    ORDER BY sit_in_count DESC
+// Most Active Participants (by points)
+$sql_most_active = "SELECT users.idno, users.firstname, users.lastname, 
+                    COALESCE(user_points.points, 0) as total_points,
+                    COUNT(sit_in_history.id) as sit_in_count
+                    FROM users
+                    LEFT JOIN user_points ON users.idno = user_points.user_id
+                    LEFT JOIN sit_in_history ON users.idno = sit_in_history.user_id
+                    GROUP BY users.idno, users.firstname, users.lastname, user_points.points
+                    ORDER BY total_points DESC, sit_in_count DESC
                     LIMIT 5";
 $result_most_active = $conn->query($sql_most_active);
 
 // Top Performing Participants (by longest total time spent)
 $sql_top_performing = "SELECT users.idno, users.firstname, users.lastname, 
+                       COALESCE(user_points.points, 0) as total_points,
                        SUM(TIMESTAMPDIFF(MINUTE, session_start, IFNULL(session_end, NOW()))) as total_minutes
-                       FROM sit_in_history
-                       JOIN users ON sit_in_history.user_id = users.idno
-                       GROUP BY users.idno, users.firstname, users.lastname
+                       FROM users
+                       LEFT JOIN user_points ON users.idno = user_points.user_id
+                       LEFT JOIN sit_in_history ON users.idno = sit_in_history.user_id
+                       GROUP BY users.idno, users.firstname, users.lastname, user_points.points
                        ORDER BY total_minutes DESC
                        LIMIT 5";
 $result_top_performing = $conn->query($sql_top_performing);
@@ -215,48 +220,77 @@ if (isset($_GET['error'])) {
             justify-content: space-around;
             margin-bottom: 30px;
             flex-wrap: wrap;
+            gap: 20px;
         }
         .leaderboard {
             width: 45%;
             min-width: 300px;
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
             margin-bottom: 20px;
         }
         .leaderboard h2 {
             text-align: center;
             color: #333;
             margin-top: 0;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4CAF50;
+            font-size: 1.5em;
         }
         .leaderboard-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            align-items: center;
+            padding: 12px 0;
             border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
         }
-        .leaderboard-item:last-child {
-            border-bottom: none;
+        .leaderboard-item:hover {
+            background-color: #f8f8f8;
         }
         .rank {
             font-weight: bold;
-            color: #4CAF50;
-            width: 30px;
+            width: 40px;
+            text-align: center;
+            font-size: 1.2em;
         }
         .student-info {
             flex-grow: 1;
-            padding: 0 10px;
+            padding: 0 15px;
         }
         .score {
             font-weight: bold;
             color: #333;
+            min-width: 80px;
+            text-align: right;
         }
-        .gold { color: #FFD700; }
-        .silver { color: #C0C0C0; }
-        .bronze { color: #CD7F32; }
+        .gold { color: #FFD700; font-size: 1.3em; }
+        .silver { color: #C0C0C0; font-size: 1.2em; }
+        .bronze { color: #CD7F32; font-size: 1.1em; }
+        .points-badge {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        .points-progress {
+            display: inline-block;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 2px 5px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        
+        .points-progress span {
+            color: #4CAF50;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -279,7 +313,7 @@ if (isset($_GET['error'])) {
     <div class="leaderboard-container">
         <!-- Most Active Participants Leaderboard -->
         <div class="leaderboard">
-            <h2>Most Active Participants</h2>
+            <h2>Top Points Earners</h2>
             <?php if ($result_most_active->num_rows > 0): ?>
                 <?php $rank = 1; ?>
                 <?php while ($row = $result_most_active->fetch_assoc()): ?>
@@ -293,7 +327,9 @@ if (isset($_GET['error'])) {
                             ?>
                         </div>
                         <div class="student-info">
-                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?> (<?= htmlspecialchars($row['idno']) ?>)
+                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?>
+                            <span class="points-badge"><?= htmlspecialchars($row['total_points']) ?> pts</span>
+                            <span class="points-progress">(<?= htmlspecialchars($row['total_points'] % 3) ?>/3 for next free session)</span>
                         </div>
                         <div class="score">
                             <?= htmlspecialchars($row['sit_in_count']) ?> sessions
@@ -308,7 +344,7 @@ if (isset($_GET['error'])) {
 
         <!-- Top Performing Participants Leaderboard -->
         <div class="leaderboard">
-            <h2>Top Performing Participants</h2>
+            <h2>Top Time Spent</h2>
             <?php if ($result_top_performing->num_rows > 0): ?>
                 <?php $rank = 1; ?>
                 <?php while ($row = $result_top_performing->fetch_assoc()): ?>
@@ -322,7 +358,9 @@ if (isset($_GET['error'])) {
                             ?>
                         </div>
                         <div class="student-info">
-                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?> (<?= htmlspecialchars($row['idno']) ?>)
+                            <?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?>
+                            <span class="points-badge"><?= htmlspecialchars($row['total_points']) ?> pts</span>
+                            <span class="points-progress">(<?= htmlspecialchars($row['total_points'] % 3) ?>/3 for next free session)</span>
                         </div>
                         <div class="score">
                             <?= htmlspecialchars(round($row['total_minutes'] / 60, 1)) ?> hours

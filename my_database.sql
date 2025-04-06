@@ -165,16 +165,17 @@ CREATE TABLE `users` (
   `year` int(11) NOT NULL,
   `email` varchar(100) NOT NULL,
   `role` enum('admin','staff','student') NOT NULL,
-  `sessions_remaining` int(11) DEFAULT 30
+  `sessions_remaining` int(11) DEFAULT 30,
+  `total_points` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password_hash`, `idno`, `lastname`, `firstname`, `middlename`, `course`, `year`, `email`, `role`, `sessions_remaining`) VALUES
-(7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 29),
-(8, '', '$2y$10$PIuJTtHqBx5SOMtsp7D7uufI1cBrQ/5fgZs5CetXNGY5HOHzOdBXm', '2020', 'abao', 'opaw', 'pisot', 'BSIT', 4, 'user@uc.com', 'admin', 30);
+INSERT INTO `users` (`id`, `username`, `password_hash`, `idno`, `lastname`, `firstname`, `middlename`, `course`, `year`, `email`, `role`, `sessions_remaining`, `total_points`) VALUES
+(7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 29, 0),
+(8, '', '$2y$10$PIuJTtHqBx5SOMtsp7D7uufI1cBrQ/5fgZs5CetXNGY5HOHzOdBXm', '2020', 'abao', 'opaw', 'pisot', 'BSIT', 4, 'user@uc.com', 'admin', 30, 0);
 
 -- --------------------------------------------------------
 
@@ -299,6 +300,44 @@ ALTER TABLE `sit_in_history`
 --
 ALTER TABLE `user_sessions`
   ADD CONSTRAINT `user_sessions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_points`
+--
+
+CREATE TABLE `user_points` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(50) NOT NULL,
+  `points` int(11) NOT NULL DEFAULT 0,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  CONSTRAINT `user_points_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`idno`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `lab_resources`
+--
+
+CREATE TABLE `lab_resources` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `lab` varchar(50) NOT NULL,
+  `resource_name` varchar(100) NOT NULL,
+  `status` enum('available','unavailable') NOT NULL DEFAULT 'available',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `lab` (`lab`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Indexes for table `lab_resources`
+--
+ALTER TABLE `lab_resources`
+  ADD KEY `lab` (`lab`);
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
