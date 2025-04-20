@@ -1,0 +1,576 @@
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124082871
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 5
+            [title] => capstone
+            [description] => project
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047982dda16_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:35:14
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124085500
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 5
+            [title] => capstone
+            [description] => project
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047982dda16_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:35:14
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124085938
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 5
+            [title] => capstone
+            [description] => project
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047982dda16_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:35:14
+        )
+
+)
+
+Request received: Array
+(
+    [action] => update_resource_status
+    [id] => 5
+    [is_active] => 0
+    [_] => 1745124089054
+)
+
+Updating resource ID: 5, is_active: 0
+Execute result: 1, Affected rows: 0
+Update failed: No rows updated
+Request received: Array
+(
+    [action] => delete_lab_resource
+    [id] => 5
+    [_] => 1745124094060
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124094073
+)
+
+Fetched resources: Array
+(
+)
+
+Request received: Array
+(
+    [title] => capstone
+    [description] => killer
+    [is_active] => 1
+)
+
+Uploading file, is_active: 1
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124103479
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+    [action] => update_resource_status
+    [id] => 6
+    [is_active] => 0
+    [_] => 1745124106522
+)
+
+Updating resource ID: 6, is_active: 0
+Execute result: 1, Affected rows: 1
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124106532
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124264997
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124266977
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124267911
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124268788
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 0
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+    [action] => update_resource_status
+    [id] => 6
+    [is_active] => 1
+    [_] => 1745124272895
+)
+
+Updating resource ID: 6, is_active: 1
+Execute result: 1, Affected rows: 1, is_active: 1
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124272906
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124274163
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124274552
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124314187
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124322213
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124346510
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745124348574
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745126176041
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745126177738
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+
+Request received: Array
+(
+)
+
+Request received: Array
+(
+    [action] => get_lab_resources
+    [_] => 1745152280881
+)
+
+Fetched resources: Array
+(
+    [0] => Array
+        (
+            [id] => 6
+            [title] => capstone
+            [description] => killer
+            [file_name] => CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_path] => Uploads/lab_resources/68047b07730f6_CAPSTONE PROJECT 1 MANUSCRIPT OUTLINE.docx.pdf
+            [file_type] => pdf
+            [file_size] => 64605
+            [uploaded_by] => 3030
+            [is_active] => 1
+            [uploaded_at] => 2025-04-20 12:41:43
+        )
+
+)
+

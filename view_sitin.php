@@ -343,10 +343,12 @@ if (isset($_GET['error'])) {
         <a href="sitin_reports.php">Sit-in Reports</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
+        <a href="student_management.php">Student Information</a>
+        <a href="lab_resources.php">Lab Resources</a>
     </div>
     <a href="logout.php" class="logout-btn">Logout</a>
 </div>
-    <h1>Current Sit-in Records</h1>
+    <h1>Sit-In Records</h1>
 
     <!-- Export Buttons -->
     <div class="export-buttons">

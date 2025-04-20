@@ -211,7 +211,7 @@ $_SESSION['user_info'] = [
             <a href="view_announcements.php">View Announcement</a>
             <a href="reservation.php">Reservation</a>
             <a href="sitin.php">Sit-In History</a>
-            <a href="lab_schedules.php">Lab Schedules</a>
+            <a href="lab_student.php">Lab Resources</a>
         </div>
         <div>
             <span>Welcome, <?php echo htmlspecialchars($idno); ?>!</span>
