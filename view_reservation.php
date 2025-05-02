@@ -19,7 +19,7 @@ $search = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Fetch reservation data with search and pagination
 $sql_reservation = "SELECT * FROM reservations 
-                    WHERE (user_id LIKE ? OR student_name LIKE ? OR lab LIKE ? OR purpose LIKE ?)
+                    WHERE (user_id LIKE ? OR student_name LIKE ? OR lab LIKE ? OR purpose LIKE ? OR pc_number LIKE ?)
                     ORDER BY reservation_date DESC 
                     LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($sql_reservation);
@@ -28,7 +28,7 @@ if (!$stmt) {
 }
 
 $search_term = "%$search%";
-$stmt->bind_param("ssssii", $search_term, $search_term, $search_term, $search_term, $per_page, $offset);
+$stmt->bind_param("sssssii", $search_term, $search_term, $search_term, $search_term, $search_term, $per_page, $offset);
 $stmt->execute();
 $result_reservation = $stmt->get_result();
 
@@ -40,12 +40,12 @@ while ($row = $result_reservation->fetch_assoc()) {
 // Fetch total number of reservations for pagination
 $sql_total = "SELECT COUNT(*) as total 
               FROM reservations 
-              WHERE (user_id LIKE ? OR student_name LIKE ? OR lab LIKE ? OR purpose LIKE ?)";
+              WHERE (user_id LIKE ? OR student_name LIKE ? OR lab LIKE ? OR purpose LIKE ? OR pc_number LIKE ?)";
 $stmt_total = $conn->prepare($sql_total);
 if (!$stmt_total) {
     die("Error preparing query: " . $conn->error);
 }
-$stmt_total->bind_param("ssss", $search_term, $search_term, $search_term, $search_term);
+$stmt_total->bind_param("sssss", $search_term, $search_term, $search_term, $search_term, $search_term);
 $stmt_total->execute();
 $total_result = $stmt_total->get_result();
 $total_row = $total_result->fetch_assoc();
@@ -218,6 +218,7 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
         <a href="student_management.php">Student Information</a>
+        <a href="lab_schedule.php">Lab Schedule</a>
         <a href="lab_resources.php">Lab Resources</a>
     </div>
     <a href="logout.php" class="logout-btn">Logout</a>
@@ -235,7 +236,7 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
     <!-- Search Bar -->
     <div class="search-bar">
         <form method="GET" action="">
-            <input type="text" name="search" placeholder="Search by ID, name, lab, or purpose..." value="<?= htmlspecialchars($search) ?>">
+            <input type="text" name="search" placeholder="Search by ID, name, lab, purpose, or PC..." value="<?= htmlspecialchars($search) ?>">
             <button type="submit">Search</button>
         </form>
     </div>
@@ -248,6 +249,7 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
                 <th>User ID</th>
                 <th>Student Name</th>
                 <th>Lab</th>
+                <th>PC Number</th>
                 <th>Reservation Date</th>
                 <th>Time In</th>
                 <th>Purpose</th>
@@ -264,6 +266,7 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
                         <td><?= htmlspecialchars($reservation['user_id']) ?></td>
                         <td><?= htmlspecialchars($reservation['student_name']) ?></td>
                         <td><?= htmlspecialchars($reservation['lab']) ?></td>
+                        <td><?= htmlspecialchars($reservation['pc_number'] ?? 'N/A') ?></td>
                         <td><?= htmlspecialchars($reservation['reservation_date']) ?></td>
                         <td><?= htmlspecialchars($reservation['time_in']) ?></td>
                         <td><?= htmlspecialchars($reservation['purpose']) ?></td>
@@ -279,7 +282,7 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="10" class="no-records">No reservations found.</td>
+                    <td colspan="11" class="no-records">No reservations found.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

@@ -24,15 +24,10 @@ $result = $stmt->get_result();
 $user_info = $result->fetch_assoc();
 $stmt->close();
 
-// Construct full name (firstname middlename lastname)
-$full_name_parts = [
-    $user_info['firstname'],
-    $user_info['middlename'],
-    $user_info['lastname']
-];
-$full_name = implode(' ', array_filter($full_name_parts));
+// Construct full name
+$full_name = trim($user_info['firstname'] . ' ' . $user_info['middlename'] . ' ' . $user_info['lastname']);
 
-// Calculate remaining sessions based on sit_in_history (same as home.php)
+// Calculate remaining sessions
 $completed_sessions_sql = "SELECT COUNT(*) as completed_sessions 
                           FROM sit_in_history 
                           WHERE user_id = ? AND session_end IS NOT NULL";
@@ -47,8 +42,8 @@ $completed_stmt->close();
 $max_sessions = 30;
 $remaining_sessions = max(0, $max_sessions - $completed_sessions);
 
-// Update session info
-$_SESSION['user_info']['sessions'] = $remaining_sessions;
+// Define available labs (each with 50 PCs)
+$labs = ['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4']; // Add/remove as needed
 
 $success_message = '';
 $error_message = '';
@@ -59,22 +54,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $student_name = $_POST['studentName'];
         $purpose = $_POST['purpose'];
         $lab = $_POST['lab'];
+        $pc_number = $_POST['pc_number'];
         $time_in = date('H:i:s', strtotime($_POST['timeIn']));
         $reservation_date = $_POST['date'];
         $remaining_session = $remaining_sessions;
 
-        // Insert reservation as "Pending"
-        $sql = "INSERT INTO reservations (user_id, student_name, purpose, lab, time_in, reservation_date, remaining_session, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssi", $user_id, $student_name, $purpose, $lab, $time_in, $reservation_date, $remaining_session);
-
-        if ($stmt->execute()) {
-            $success_message = "Reservation request submitted successfully! Awaiting admin approval.";
+        // Check if PC is already reserved
+        $check_sql = "SELECT id FROM reservations 
+                      WHERE lab = ? AND pc_number = ? AND reservation_date = ? 
+                      AND status IN ('Pending', 'Accepted')";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("sss", $lab, $pc_number, $reservation_date);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $error_message = "This PC is already reserved for the selected date.";
         } else {
-            $error_message = "Error: " . $conn->error;
+            // Insert reservation as "Pending"
+            $sql = "INSERT INTO reservations (user_id, student_name, purpose, lab, pc_number, time_in, reservation_date, remaining_session, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssssssi", $user_id, $student_name, $purpose, $lab, $pc_number, $time_in, $reservation_date, $remaining_session);
+
+            if ($stmt->execute()) {
+                $success_message = "Reservation request submitted successfully! Awaiting admin approval.";
+            } else {
+                $error_message = "Error: " . $conn->error;
+            }
+            $stmt->close();
         }
-        $stmt->close();
+        $check_stmt->close();
     } else {
         $error_message = "No sessions remaining.";
     }
@@ -131,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         label {
             margin-top: 10px;
         }
-        input {
+        input, select {
             margin-top: 5px;
             padding: 10px;
             border: 1px solid #ccc;
@@ -180,19 +190,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #a94442;
         }
     </style>
+    <script>
+        function generatePCOptions() {
+            const labSelect = document.getElementById('lab');
+            const pcSelect = document.getElementById('pc_number');
+            const selectedLab = labSelect.value;
+            
+            pcSelect.innerHTML = '<option value="">Select PC</option>';
+            
+            if (selectedLab) {
+                // Generate 50 PCs for the selected lab
+                for (let i = 1; i <= 50; i++) {
+                    const option = document.createElement('option');
+                    option.value = `PC-${i}`;
+                    option.textContent = `PC-${i}`;
+                    pcSelect.appendChild(option);
+                }
+            }
+        }
+        
+        // Set minimum date to today
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').min = today;
+        };
+    </script>
 </head>
 <body>
-<div class="header">
-    <div>
-        <a href="home.php">Home</a>
-        <a href="reports.php">Reports</a>
-        <a href="editprofile.php">Edit Profile</a>
-        <a href="view_announcements.php">View Announcement</a>
-        <a href="reservation.php">Reservation</a>
-        <a href="sitin.php">Sit-In History</a>
-        <a href="lab_student.php">Lab Resources</a>
+<<div class="header">
+        <div>
+            <a href="home.php">Home</a>
+            <a href="reports.php">Reports</a>
+            <a href="editprofile.php">Edit Profile</a>
+            <a href="view_announcements.php">View Announcement</a>
+            <a href="reservation.php">Reservation</a>
+            <a href="sitin.php">Sit-In History</a>
+            <a href="lab_schedule_student.php">Lab Schudles</a>
+            <a href="view_points.php">View Points</a>
+            <a href="lab_student.php">Lab Resources</a>
+        </div>
+        <div>
+            <a href="logout.php" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+        </div>
     </div>
-</div>
 
 <main>
     <h1>Reservation</h1>
@@ -213,10 +253,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="text" id="purpose" name="purpose" required>
 
         <label for="lab">Lab:</label>
-        <input type="text" id="lab" name="lab" required>
+        <select id="lab" name="lab" onchange="generatePCOptions()" required>
+            <option value="">Select Lab</option>
+            <?php foreach ($labs as $lab): ?>
+                <option value="<?= htmlspecialchars($lab) ?>"><?= htmlspecialchars($lab) ?></option>
+            <?php endforeach; ?>
+        </select>
+
+        <label for="pc_number">PC Number:</label>
+        <select id="pc_number" name="pc_number" required>
+            <option value="">Select Lab first</option>
+        </select>
 
         <label for="timeIn">Time In:</label>
-        <input type="text" id="timeIn" name="timeIn" placeholder="hh:mm" required>
+        <input type="time" id="timeIn" name="timeIn" required>
 
         <label for="date">Date:</label>
         <input type="date" id="date" name="date" required>

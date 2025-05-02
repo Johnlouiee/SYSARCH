@@ -96,16 +96,21 @@ $conn->close();
 </head>
 <body>
 <div class="header">
-    <div>
-        <a href="home.php">Home</a>
-        <a href="reports.php">Reports</a>
-        <a href="editprofile.php">Edit Profile</a>
-        <a href="view_announcements.php">View Announcement</a>
-        <a href="reservation.php">Reservation</a>
-        <a href="sitin.php">Sit-In History</a>
-        <a href="lab_student.php">Lab Resources</a>
+        <div>
+            <a href="home.php">Home</a>
+            <a href="reports.php">Reports</a>
+            <a href="editprofile.php">Edit Profile</a>
+            <a href="view_announcements.php">View Announcement</a>
+            <a href="reservation.php">Reservation</a>
+            <a href="sitin.php">Sit-In History</a>
+            <a href="lab_schedule_student.php">Lab Schudles</a>
+            <a href="view_points.php">View Points</a>
+            <a href="lab_student.php">Lab Resources</a>
+        </div>
+        <div>
+        <a href="logout.php" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
     </div>
-</div>
+    </div>
 
 <h1>Reports</h1>
 

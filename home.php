@@ -211,6 +211,8 @@ $_SESSION['user_info'] = [
             <a href="view_announcements.php">View Announcement</a>
             <a href="reservation.php">Reservation</a>
             <a href="sitin.php">Sit-In History</a>
+            <a href="lab_schedule_student.php">Lab Schudles</a>
+            <a href="view_points.php">View Points</a>
             <a href="lab_student.php">Lab Resources</a>
         </div>
         <div>
