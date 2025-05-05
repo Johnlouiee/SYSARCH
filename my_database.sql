@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 02, 2025 at 07:58 AM
+-- Generation Time: May 04, 2025 at 06:23 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -42,6 +42,24 @@ INSERT INTO `announcements` (`id`, `title`, `content`, `created_at`) VALUES
 (1, 'ICT CONGRESS', 'BUY NOW', '2025-03-02 12:19:27'),
 (2, 'ako', 'asda', '2025-03-02 12:24:40'),
 (3, 'ict ', 'buy now', '2025-03-11 11:52:50');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `computer_control`
+--
+
+CREATE TABLE `computer_control` (
+  `id` int(11) NOT NULL,
+  `pc_number` varchar(20) NOT NULL,
+  `lab_name` varchar(50) NOT NULL,
+  `status` enum('available','reserved','in_use','offline','maintenance') NOT NULL DEFAULT 'available',
+  `reservation_id` int(11) DEFAULT NULL,
+  `last_update` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `reservation_id` (`reservation_id`),
+  CONSTRAINT `computer_control_ibfk_1` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -127,18 +145,25 @@ INSERT INTO `lab_schedules` (`id`, `title`, `description`, `file_name`, `file_pa
 -- --------------------------------------------------------
 
 --
--- Table structure for table `lab_usage`
+-- Table structure for table `pc_availability`
 --
 
-CREATE TABLE `lab_usage` (
+CREATE TABLE `pc_availability` (
   `id` int(11) NOT NULL,
-  `student_id` varchar(50) NOT NULL,
   `lab_name` varchar(50) NOT NULL,
-  `session_start` datetime NOT NULL,
-  `session_end` datetime DEFAULT NULL,
-  `duration_minutes` int(11) DEFAULT NULL,
-  `points_earned` int(11) DEFAULT 0
+  `pc_number` varchar(20) NOT NULL,
+  `is_available` tinyint(1) DEFAULT 1,
+  `reservation_id` int(11) DEFAULT NULL,
+  `reserved_from` datetime DEFAULT NULL,
+  `reserved_to` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pc_availability`
+--
+
+INSERT INTO `pc_availability` (`id`, `lab_name`, `pc_number`, `is_available`, `reservation_id`, `reserved_from`, `reserved_to`) VALUES
+(1, 'Lab 2', 'PC-50', 0, 7, '2025-05-04 12:07:56', '2025-05-04 14:07:56');
 
 -- --------------------------------------------------------
 
@@ -188,23 +213,10 @@ INSERT INTO `reservations` (`id`, `user_id`, `student_name`, `purpose`, `lab`, `
 (1, '1010', 'john louie purisima', 'Java', '25', NULL, '10:06:00', '0000-00-00', 26, 'Declined'),
 (2, '1010', 'johnlouie nacaytuna purisima', 'APS.NET', '524', NULL, '10:06:00', '2025-03-20', 30, 'Declined'),
 (3, '1010', 'johnlouie nacaytuna purisima', 'APS.NET', '55', NULL, '10:06:00', '2025-03-20', 30, 'Accepted'),
-(4, '2020', 'shao weak lugay', 'Java', '555', NULL, '10:06:00', '2025-04-09', 30, 'Accepted');
+(4, '2020', 'shao weak lugay', 'Java', '555', NULL, '10:06:00', '2025-04-09', 30, 'Accepted'),
+(5, '1010', 'johnlouie nacaytuna purisima', 'Java', 'Lab 3', 'PC-49', '14:09:00', '2025-05-02', 20, 'Accepted'),
+(6, '1010', 'johnlouie nacaytuna purisima', 'C programming', 'Lab 1', 'PC-50', '12:40:00', '2025-05-04', 20, 'Accepted'),
 
--- --------------------------------------------------------
-
---
--- Table structure for table `reward_trannsactions`
---
-
-CREATE TABLE `reward_trannsactions` (
-  `id` int(11) NOT NULL,
-  `student_id` varchar(50) NOT NULL,
-  `points_change` int(11) NOT NULL,
-  `transaction_type` enum('earn','redeem','admin_adjust') NOT NULL,
-  `description` varchar(255) NOT NULL,
-  `admin_id` varchar(50) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -221,6 +233,13 @@ CREATE TABLE `reward_transactions` (
   `admin_id` varchar(50) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reward_transactions`
+--
+
+INSERT INTO `reward_transactions` (`id`, `student_id`, `points_change`, `transaction_type`, `description`, `admin_id`, `created_at`) VALUES
+(1, '1010', 1, 'admin_adjust', 'good', '3030', '2025-05-04 04:01:20');
 
 -- --------------------------------------------------------
 
@@ -270,6 +289,13 @@ CREATE TABLE `student_rewards` (
   `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `student_rewards`
+--
+
+INSERT INTO `student_rewards` (`id`, `student_id`, `total_points`, `free_sessions_available`, `last_updated`) VALUES
+(1, '1010', 1, 0, '2025-05-04 04:01:20');
+
 -- --------------------------------------------------------
 
 --
@@ -298,7 +324,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `idno`, `lastname`, `firstname`, `middlename`, `course`, `year`, `email`, `role`, `sessions_remaining`, `total_points`) VALUES
 (7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 29, 10),
-(9, '', '$2y$10$SwsFnur78ZwlzdKqGrWwtejAaK34WgUVvFoime.SKGIk55GIuSeK.', '2020', 'lugay', 'shao', 'weak', 'BSECE', 3, 'user@uc.com', 'student', 29, 9),
+(9, '', '$2y$10$SwsFnur78ZwlzdKqGrWwtejAaK34WgUVvFoime.SKGIk55GIuSeK.', '2020', 'lugay', 'shao', 'weak', 'BSECE', 3, 'user@uc.com', 'student', 29, 11),
 (10, '', '$2y$10$ALnp4a5yuGN7fQBMSgoy0uLLTQDf2wtuRuN8VRR7cRGx19nFpoKSu', '3030', 'opaw', 'me', 'you', 'BSIT', 1, 'admin@uc.com', 'admin', 30, 0);
 
 -- --------------------------------------------------------
@@ -345,6 +371,13 @@ ALTER TABLE `announcements`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `computer_control`
+--
+ALTER TABLE `computer_control`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `lab_pc` (`lab_name`,`pc_number`);
+
+--
 -- Indexes for table `feedback`
 --
 ALTER TABLE `feedback`
@@ -363,10 +396,11 @@ ALTER TABLE `lab_schedules`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `lab_usage`
+-- Indexes for table `pc_availability`
 --
-ALTER TABLE `lab_usage`
-  ADD PRIMARY KEY (`id`);
+ALTER TABLE `pc_availability`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `lab_pc` (`lab_name`,`pc_number`);
 
 --
 -- Indexes for table `profiles`
@@ -378,12 +412,6 @@ ALTER TABLE `profiles`
 -- Indexes for table `reservations`
 --
 ALTER TABLE `reservations`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `reward_trannsactions`
---
-ALTER TABLE `reward_trannsactions`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -438,6 +466,12 @@ ALTER TABLE `announcements`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT for table `computer_control`
+--
+ALTER TABLE `computer_control`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `feedback`
 --
 ALTER TABLE `feedback`
@@ -456,10 +490,10 @@ ALTER TABLE `lab_schedules`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `lab_usage`
+-- AUTO_INCREMENT for table `pc_availability`
 --
-ALTER TABLE `lab_usage`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `pc_availability`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `profiles`
@@ -471,19 +505,13 @@ ALTER TABLE `profiles`
 -- AUTO_INCREMENT for table `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT for table `reward_trannsactions`
---
-ALTER TABLE `reward_trannsactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `reward_transactions`
 --
 ALTER TABLE `reward_transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `sit_in_history`
@@ -495,7 +523,7 @@ ALTER TABLE `sit_in_history`
 -- AUTO_INCREMENT for table `student_rewards`
 --
 ALTER TABLE `student_rewards`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `users`

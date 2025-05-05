@@ -380,8 +380,8 @@ $announcements_result = $conn->query($announcements_sql);
         <a href="view_reservation.php">View Reservation</a>
         <a href="student_management.php">Student Information</a>
         <a href="lab_schedule.php">Lab Schedule</a>
-        <a href="lab_usage.php">Lab Usage</a>
         <a href="lab_resources.php">Lab Resources</a>
+        <a href="computer_control.php">Computer Control</a>
     </div>
     <a href="logout.php" class="logout-btn">Logout</a>
 </div>

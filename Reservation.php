@@ -217,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </script>
 </head>
 <body>
-<<div class="header">
+<div class="header">
         <div>
             <a href="home.php">Home</a>
             <a href="reports.php">Reports</a>
