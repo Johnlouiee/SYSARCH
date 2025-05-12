@@ -1,19 +1,31 @@
 <?php
+<<<<<<< HEAD
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+=======
+session_start();
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 
 
 class ComputerControl {
     private $db;
     private $pcIcons = [
+<<<<<<< HEAD
         'available' => '🟢',
         'in_use' => '🖥️',
         'offline' => '⚫',
         'maintenance' => '🔧',
         'reserved' => '📅',
         'pending' => '⏳'
+=======
+        'available' => '💻',  // PC icon for available
+        'in_use' => '🖥️',    // Desktop PC for in use
+        'offline' => '📺',    // Monitor for offline
+        'maintenance' => '🔧', // Wrench for maintenance
+        'reserved' => '📅'    // Calendar for reserved - Ensure this exists
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
     ];
 
     public function __construct() {
@@ -25,13 +37,19 @@ class ComputerControl {
     // Initialize lab with 50 PCs
     public function initializeLab($labName) {
         try {
+<<<<<<< HEAD
             // Check if lab already exists in computer_control table
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM computer_control WHERE lab_name = ?");
+=======
+            // Check if lab already exists in lab_usage table
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM lab_usage WHERE lab_name = ?");
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
             $stmt->execute([$labName]);
             $count = $stmt->fetchColumn();
 
             // If lab doesn't have 50 PCs, initialize them
             if ($count < 50) {
+<<<<<<< HEAD
                 // Begin transaction
                 $this->db->beginTransaction();
 
@@ -58,6 +76,19 @@ class ComputerControl {
                     // Rollback the transaction on error
                     $this->db->rollBack();
                     throw $e;
+=======
+                // Delete existing records for this lab to start fresh
+                $stmt = $this->db->prepare("DELETE FROM lab_usage WHERE lab_name = ?");
+                $stmt->execute([$labName]);
+
+                // Initialize 50 PCs for the lab
+                for ($i = 1; $i <= 50; $i++) {
+                    $stmt = $this->db->prepare("
+                        INSERT INTO lab_usage (student_id, lab_name, session_start, status) 
+                        VALUES (?, ?, NOW(), 'available')
+                    ");
+                    $stmt->execute(['SYSTEM', $labName]);
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 }
             }
             return true;
@@ -70,6 +101,7 @@ class ComputerControl {
     // Get all PCs in a lab with icons
     public function getLabComputers($labName) {
         try {
+<<<<<<< HEAD
             // First ensure the lab is initialized
             $this->initializeLab($labName);
 
@@ -186,11 +218,72 @@ class ComputerControl {
                 'time_slot_start' => null,
                 'time_slot_end' => null
             ]);
+=======
+            $stmt = $this->db->prepare("
+                SELECT 
+                    lu.id,
+                    lu.student_id,
+                    lu.lab_name,
+                    lu.session_start,
+                    lu.session_end,
+                    lu.duration_minutes,
+                    lu.points_earned,
+                    COALESCE(cc.status, 'available') as control_status,
+                    lu.student_id as usage_student_id,
+                    lu.session_end as usage_session_end,
+                    r.id as reservation_id,
+                    r.status as reservation_status
+                FROM lab_usage lu
+                LEFT JOIN computer_control cc ON lu.lab_name = cc.lab_name AND lu.id = cc.pc_number
+                LEFT JOIN reservations r ON cc.reservation_id = r.id
+                WHERE lu.lab_name = ?
+                ORDER BY lu.id
+            ");
+            $stmt->execute([$labName]);
+            $computersData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $computers = [];
+            foreach ($computersData as $data) {
+                $status = 'offline'; // Default to offline if none of the conditions below match
+                if ($data['control_status'] === 'reserved') {
+                    $status = 'reserved';
+                } elseif ($data['control_status'] === 'maintenance') {
+                    $status = 'maintenance';
+                } elseif ($data['usage_session_end'] === null && $data['usage_student_id'] !== 'SYSTEM') {
+                    $status = 'in_use';
+                } elseif ($data['usage_student_id'] === 'SYSTEM' || $data['usage_session_end'] !== null) { // Fixed: Changed IS NOT NULL to !== null
+                     // If controlled by SYSTEM or the last session ended, check control_status again, default to available
+                     if ($data['control_status'] === 'available') {
+                         $status = 'available';
+                     } elseif ($data['control_status'] === 'offline') {
+                         $status = 'offline'; // Explicitly offline from control table
+                     } else {
+                         // Default to available if student is SYSTEM or session ended, and not reserved/maintenance/offline in control table
+                         $status = 'available'; 
+                     }
+                }
+
+                // Ensure the 'reserved' icon exists in your $pcIcons array
+                if (!isset($this->pcIcons['reserved'])) {
+                     $this->pcIcons['reserved'] = '📅'; // Add default if missing
+                }
+                
+                $data['status'] = $status;
+                $data['icon'] = $this->pcIcons[$status] ?? $this->pcIcons['offline'];
+                $computers[] = $data;
+            }
+    
+            return $computers;
+        } catch (PDOException $e) {
+            error_log("Error getting lab computers: " . $e->getMessage());
+            return [];
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
         }
     }
 
     // Display lab layout with PC icons
     public function displayLabLayout($labName) {
+<<<<<<< HEAD
         try {
             // Initialize lab with 50 PCs if not already done
             $this->initializeLab($labName);
@@ -288,6 +381,37 @@ class ComputerControl {
             error_log("Error displaying lab layout: " . $e->getMessage());
             return "<div class='error'>Error loading lab layout</div>";
         }
+=======
+        $computers = $this->getLabComputers($labName);
+        $layout = "<div class='lab-layout' id='lab-{$labName}'>\n";
+        $layout .= "<h2>{$labName}</h2>\n";
+        $layout .= "<div class='pc-grid'>\n";
+
+        // Display PCs in a 5x10 grid
+        for ($i = 0; $i < 50; $i++) {
+            if ($i % 10 === 0) {
+                $layout .= "<div class='pc-row'>\n";
+            }
+
+            $pc = $computers[$i] ?? ['status' => 'offline', 'icon' => $this->pcIcons['offline']];
+            $pcNumber = $i + 1;
+            
+            $layout .= "<div class='pc-item' data-pc-id='{$pcNumber}' data-status='{$pc['status']}'>\n";
+            $layout .= "<span class='pc-icon'>{$pc['icon']}</span>\n";
+            $layout .= "<span class='pc-number'>PC-{$pcNumber}</span>\n";
+            $layout .= "<span class='pc-status'>{$pc['status']}</span>\n";
+            $layout .= "</div>\n";
+
+            if ($i % 10 === 9) {
+                $layout .= "</div>\n";
+            }
+        }
+
+        $layout .= "</div>\n"; // Close pc-grid
+        $layout .= "</div>\n"; // Close lab-layout
+
+        return $layout;
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
     }
 
     // Get lab schedule status
@@ -335,9 +459,15 @@ class ComputerControl {
         } catch (PDOException $e) {
             error_log("Error getting lab schedule: " . $e->getMessage());
             return [
+<<<<<<< HEAD
                 'status' => 'available',
                 'title' => 'No Schedule',
                 'description' => 'Laboratory is available for use',
+=======
+                'status' => 'unknown',
+                'title' => 'Error',
+                'description' => 'Unable to fetch schedule information',
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 'schedule_date' => null,
                 'schedule_end_date' => null,
                 'uploaded_by' => null
@@ -347,6 +477,7 @@ class ComputerControl {
 
     // Get all labs with their status
     public function getAllLabsStatus() {
+<<<<<<< HEAD
         $labs = ['Lab 524', 'Lab 526', 'Lab 542', 'Lab 544', 'Lab 517', 'Lab 528']; // Updated lab list
         $status = [];
 
@@ -355,10 +486,20 @@ class ComputerControl {
             $pcStatus = $this->getLabComputers($lab); // Get detailed PC statuses
 
             // Initialize counters
+=======
+        $labs = ['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4']; // Or fetch dynamically if needed
+        $status = [];
+        
+        foreach ($labs as $lab) {
+            $scheduleStatus = $this->getLabScheduleStatus($lab);
+            $pcStatus = $this->getLabComputers($lab); // Get detailed PC statuses
+            
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
             $availablePCs = 0;
             $inUsePCs = 0;
             $reservedPCs = 0;
             $maintenancePCs = 0;
+<<<<<<< HEAD
             $offlinePCs = 0;
 
             // Count PC statuses
@@ -410,6 +551,41 @@ class ComputerControl {
             ];
         }
 
+=======
+            $totalActivePCs = 0; // Total PCs excluding offline ones
+            
+            foreach ($pcStatus as $pc) {
+                if ($pc['status'] !== 'offline') {
+                    $totalActivePCs++; // Count only non-offline PCs towards the total displayed
+                    switch ($pc['status']) {
+                        case 'available':
+                            $availablePCs++;
+                            break;
+                        case 'in_use':
+                            $inUsePCs++;
+                            break;
+                        case 'reserved':
+                            $reservedPCs++; // Optionally track reserved
+                            break;
+                        case 'maintenance':
+                            $maintenancePCs++; // Optionally track maintenance
+                            break;
+                    }
+                }
+            }
+            
+            $status[$lab] = [
+                'schedule_status' => $scheduleStatus['status'],
+                'schedule_info' => $scheduleStatus,
+                'available_pcs' => $availablePCs,
+                'in_use_pcs' => $inUsePCs,
+                'reserved_pcs' => $reservedPCs, // Add if needed
+                'maintenance_pcs' => $maintenancePCs, // Add if needed
+                'total_pcs' => $totalActivePCs // Use the count of non-offline PCs
+            ];
+        }
+        
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
         return $status;
     }
 
@@ -436,6 +612,7 @@ class ComputerControl {
                     justify-content: space-between;
                     align-items: center;
                 }
+<<<<<<< HEAD
                 .header a {
                     color: white;
                     text-decoration: none;
@@ -444,6 +621,8 @@ class ComputerControl {
                 .header a:hover {
                     text-decoration: underline;
                 }
+=======
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 .header h1 {
                     margin: 0;
                     font-size: 24px;
@@ -498,6 +677,7 @@ class ComputerControl {
                     gap: 10px;
                 }
                 .pc-item {
+<<<<<<< HEAD
                     position: relative;
                     transition: all 0.3s ease;
                     padding: 10px;
@@ -509,6 +689,21 @@ class ComputerControl {
                     transform: scale(1.05);
                     z-index: 1;
                     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+=======
+                    background: white;
+                    padding: 10px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 80px;
+                    cursor: pointer;
+                    transition: transform 0.2s;
+                }
+                .pc-item:hover {
+                    transform: scale(1.05);
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 }
                 .pc-icon {
                     font-size: 24px;
@@ -523,6 +718,7 @@ class ComputerControl {
                     color: #999;
                     text-transform: capitalize;
                 }
+<<<<<<< HEAD
                 .pc-label {
                     font-size: 12px;
                     font-weight: bold;
@@ -532,6 +728,8 @@ class ComputerControl {
                     padding: 2px 4px;
                     border-radius: 3px;
                 }
+=======
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 .pc-item[data-status="available"] {
                     border: 2px solid #4CAF50;
                 }
@@ -633,6 +831,7 @@ class ComputerControl {
                     color: #888;
                     font-size: 12px;
                 }
+<<<<<<< HEAD
                 .pc-admin-controls {
                     margin-top: 5px;
                     font-size: 12px;
@@ -686,12 +885,18 @@ class ComputerControl {
                     padding: 0;
                     width: 100%;
                 }
+=======
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
             </style>
         </head>
         <body>
             <div class="header">
                 <div>
+<<<<<<< HEAD
                     <h1>    </h1>
+=======
+                    <h1>College of Computer Studies Admin</h1>
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                     <a href="admin_home.php">Home</a>
                     <a href="#" id="searchLink">Search</a>
                     <a href="view_current_sitin.php">Current Sit-in</a>
@@ -699,23 +904,73 @@ class ComputerControl {
                     <a href="sitin_reports.php">Sit-in Reports</a>
                     <a href="view_feedback.php">View Feedback</a>
                     <a href="view_reservation.php">View Reservation</a>
+<<<<<<< HEAD
                     <a href="reservation_logs.php">Reservation Logs</a>
                     <a href="student_management.php">Student Information</a>
                     <a href="lab_schedule.php">Lab Schedule</a>
                     <a href="lab_resources.php">Lab Resources</a>
                     <a href="admin_notification.php">Notification</a>
+=======
+                    <a href="student_management.php">Student Information</a>
+                    <a href="lab_schedule.php">Lab Schedule</a>
+                    <a href="lab_resources.php">Lab Resources</a>
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                     <a href="computer_control.php">Computer Control</a>
                 </div>
                 <a href="logout.php" class="logout-btn">Logout</a>
             </div>
 
             <div class="container">
+<<<<<<< HEAD
+=======
+                <div class="lab-status-grid">';
+
+        // Display lab status cards with schedule information
+        $labsStatus = $this->getAllLabsStatus();
+        foreach ($labsStatus as $lab => $status) {
+            $html .= "
+                <div class='lab-status-card'>
+                    <h3>{$lab}</h3>
+                    <div class='status " . ($status['schedule_status'] === 'available' ? 'available' : 'occupied') . "'>
+                        " . ucfirst($status['schedule_status']) . "
+                    </div>
+                    <div class='schedule-info'>
+                        <p class='schedule-title'>{$status['schedule_info']['title']}</p>
+                        <p class='schedule-date'>";
+            
+            if ($status['schedule_info']['schedule_date']) {
+                $html .= "From: " . date('M d, Y', strtotime($status['schedule_info']['schedule_date']));
+                if ($status['schedule_info']['schedule_end_date']) {
+                    $html .= " to " . date('M d, Y', strtotime($status['schedule_info']['schedule_end_date']));
+                }
+            }
+            
+            $html .= "</p>";
+            
+            if ($status['schedule_info']['uploaded_by']) {
+                $html .= "<p class='schedule-uploader'>Scheduled by: {$status['schedule_info']['uploaded_by']}</p>";
+            }
+            
+            $html .= "
+                    </div>
+                    <div class='pc-count'>
+                        Available PCs: {$status['available_pcs']} / {$status['total_pcs']}
+                    </div>
+                </div>";
+        }
+
+        $html .= '</div>
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 <div class="lab-selector">
                     <select id="labSelect" onchange="changeLab(this.value)">
                         <option value="">Select Laboratory</option>';
 
         // Add lab options
+<<<<<<< HEAD
         $labs = ['Lab 524', 'Lab 526', 'Lab 542', 'Lab 544', 'Lab 517', 'Lab 528'];
+=======
+        $labs = ['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4'];
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
         foreach ($labs as $lab) {
             $html .= "<option value='{$lab}'>{$lab}</option>";
         }
@@ -725,7 +980,11 @@ class ComputerControl {
                 <div class="status-legend">
                     <span><i>💻</i> Available</span>
                     <span><i>🖥️</i> In Use</span>
+<<<<<<< HEAD
                     <span><i>📅</i> Reserved</span>
+=======
+                    <span><i>📅</i> Reserved</span>  <!-- Added Reserved Legend -->
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                     <span><i>📺</i> Offline</span>
                     <span><i>🔧</i> Maintenance</span>
                 </div>';
@@ -737,7 +996,36 @@ class ComputerControl {
         }
 
         $html .= '</div>
+<<<<<<< HEAD
             <script src="js/computer_control.js"></script>
+=======
+            <script>
+                function changeLab(labName) {
+                    // Hide all labs
+                    document.querySelectorAll(".lab-layout").forEach(lab => {
+                        lab.style.display = "none";
+                    });
+                    
+                    // Show selected lab
+                    if (labName) {
+                        const selectedLab = document.getElementById("lab-" + labName);
+                        if (selectedLab) {
+                            selectedLab.style.display = "block";
+                        }
+                    }
+                }
+
+                // Add click event listeners to PC items
+                document.querySelectorAll(".pc-item").forEach(pc => {
+                    pc.addEventListener("click", function() {
+                        const pcId = this.getAttribute("data-pc-id");
+                        const labName = this.closest(".lab-layout").querySelector("h2").textContent;
+                        const status = this.querySelector(".pc-status").textContent;
+                        alert(`PC ${pcId} in ${labName}\nStatus: ${status}`);
+                    });
+                });
+            </script>
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
         </body>
         </html>';
 
@@ -745,6 +1033,7 @@ class ComputerControl {
     }
 
     // Update PC status
+<<<<<<< HEAD
     public function updatePCStatus($labName, $pcNumber, $status) {
         try {
             if (!isset($_SESSION['user_info']) || $_SESSION['user_info']['role'] !== 'admin') {
@@ -826,6 +1115,30 @@ class ComputerControl {
             }
         } catch (PDOException $e) {
             error_log("Error in updatePCStatus: " . $e->getMessage());
+=======
+    public function updatePCStatus($labName, $pcId, $status) {
+        try {
+            if ($status === 'available') {
+                $stmt = $this->db->prepare("
+                    UPDATE lab_usage 
+                    SET student_id = 'SYSTEM',
+                        session_start = NOW(),
+                        session_end = NULL,
+                        duration_minutes = NULL,
+                        points_earned = 0
+                    WHERE id = ? AND lab_name = ?
+                ");
+            } else {
+                $stmt = $this->db->prepare("
+                    UPDATE lab_usage 
+                    SET status = ?
+                    WHERE id = ? AND lab_name = ?
+                ");
+            }
+            return $stmt->execute([$status, $pcId, $labName]);
+        } catch (PDOException $e) {
+            error_log("Error updating PC status: " . $e->getMessage());
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
             return false;
         }
     }
@@ -949,6 +1262,7 @@ class ComputerControl {
                 } elseif ($data['usage_session_end'] === null && $data['usage_student_id'] !== 'SYSTEM') {
                     $status = 'in_use';
                 } elseif ($data['usage_student_id'] === 'SYSTEM' || $data['usage_session_end'] !== null) {
+<<<<<<< HEAD
                     if ($data['control_status'] === 'available') {
                         $status = 'available';
                     } elseif ($data['control_status'] === 'offline') {
@@ -958,6 +1272,22 @@ class ComputerControl {
                     }
                 }
 
+=======
+                     // If controlled by SYSTEM or the last session ended, check control_status again, default to available
+                     if ($data['control_status'] === 'available') {
+                         $status = 'available';
+                     } elseif ($data['control_status'] === 'offline') {
+                         $status = 'offline';
+                     } else {
+                         $status = 'available';
+                     }
+                }
+
+                if (!isset($this->pcIcons['reserved'])) {
+                     $this->pcIcons['reserved'] = '📅';
+                }
+                
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
                 $data['status'] = $status;
                 $data['icon'] = $this->pcIcons[$status] ?? $this->pcIcons['offline'];
                 $computers[] = $data;
@@ -986,6 +1316,7 @@ class ComputerControl {
             return false;
         }
     }
+<<<<<<< HEAD
 
     // Add this new method to handle automatic PC status updates
     public function updatePCStatusFromReservation($labName, $pcNumber, $reservationId) {
@@ -1085,6 +1416,8 @@ class ComputerControl {
             return false;
         }
     }
+=======
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 }
 
 // If this file is accessed directly, display all labs

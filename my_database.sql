@@ -3,7 +3,11 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
+<<<<<<< HEAD
 -- Generation Time: May 08, 2025 at 05:54 PM
+=======
+-- Generation Time: May 04, 2025 at 06:23 AM
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -55,6 +59,7 @@ CREATE TABLE `computer_control` (
   `lab_name` varchar(50) NOT NULL,
   `status` enum('available','reserved','in_use','offline','maintenance') NOT NULL DEFAULT 'available',
   `reservation_id` int(11) DEFAULT NULL,
+<<<<<<< HEAD
   `last_update` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -114,6 +119,14 @@ INSERT INTO `computer_control` (`id`, `pc_number`, `lab_name`, `status`, `reserv
 (49, 'PC-49', 'Lab 524', 'available', NULL, '2025-05-08 23:52:57'),
 (50, 'PC-50', 'Lab 524', 'available', NULL, '2025-05-08 23:52:57');
 
+=======
+  `last_update` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `reservation_id` (`reservation_id`),
+  CONSTRAINT `computer_control_ibfk_1` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 -- --------------------------------------------------------
 
 --
@@ -198,6 +211,7 @@ INSERT INTO `lab_schedules` (`id`, `title`, `description`, `file_name`, `file_pa
 -- --------------------------------------------------------
 
 --
+<<<<<<< HEAD
 -- Table structure for table `notifications`
 --
 
@@ -243,10 +257,27 @@ CREATE TABLE `pc_availability` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+=======
+-- Table structure for table `pc_availability`
+--
+
+CREATE TABLE `pc_availability` (
+  `id` int(11) NOT NULL,
+  `lab_name` varchar(50) NOT NULL,
+  `pc_number` varchar(20) NOT NULL,
+  `is_available` tinyint(1) DEFAULT 1,
+  `reservation_id` int(11) DEFAULT NULL,
+  `reserved_from` datetime DEFAULT NULL,
+  `reserved_to` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 -- Dumping data for table `pc_availability`
 --
 
 INSERT INTO `pc_availability` (`id`, `lab_name`, `pc_number`, `is_available`, `reservation_id`, `reserved_from`, `reserved_to`) VALUES
+<<<<<<< HEAD
 (1, 'Lab 524', 'PC-1', 1, NULL, NULL, NULL),
 (2, 'Lab 524', 'PC-10', 1, NULL, NULL, NULL),
 (3, 'Lab 524', 'PC-11', 1, NULL, NULL, NULL),
@@ -619,6 +650,9 @@ INSERT INTO `pc_management` (`id`, `lab_name`, `pc_number`, `status`, `reservati
 (298, 'Lab 528', 'PC-48', 'available', NULL, NULL, '2025-05-07 16:06:06'),
 (299, 'Lab 528', 'PC-49', 'available', NULL, NULL, '2025-05-07 16:06:06'),
 (300, 'Lab 528', 'PC-50', 'available', NULL, NULL, '2025-05-07 16:06:06');
+=======
+(1, 'Lab 2', 'PC-50', 0, 7, '2025-05-04 12:07:56', '2025-05-04 14:07:56');
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 -- --------------------------------------------------------
 
@@ -671,6 +705,7 @@ INSERT INTO `reservations` (`id`, `user_id`, `student_name`, `purpose`, `lab`, `
 (4, '2020', 'shao weak lugay', 'Java', '555', NULL, '10:06:00', '2025-04-09', 30, 'Accepted'),
 (5, '1010', 'johnlouie nacaytuna purisima', 'Java', 'Lab 3', 'PC-49', '14:09:00', '2025-05-02', 20, 'Accepted'),
 (6, '1010', 'johnlouie nacaytuna purisima', 'C programming', 'Lab 1', 'PC-50', '12:40:00', '2025-05-04', 20, 'Accepted'),
+<<<<<<< HEAD
 (7, '1010', 'johnlouie nacaytuna purisima', 'APS.NET', 'Lab 2', 'PC-50', '12:07:00', '2025-05-04', 20, 'Accepted'),
 (8, '1010', 'johnlouie nacaytuna purisima', 'Java', 'Lab 3', 'PC-50', '13:52:00', '2025-05-04', 20, 'Accepted'),
 (9, '1010', 'johnlouie nacaytuna purisima', 'Java', 'Lab 4', 'PC-50', '13:59:00', '2025-05-04', 20, 'Accepted'),
@@ -708,6 +743,9 @@ CREATE TABLE `reservation_logs` (
   `details` text DEFAULT NULL,
   `created_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+=======
+
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 --
 -- Dumping data for table `reservation_logs`
@@ -888,12 +926,18 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `idno`, `lastname`, `firstname`, `middlename`, `course`, `year`, `email`, `role`, `sessions_remaining`, `total_points`) VALUES
+<<<<<<< HEAD
 (7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 29, 12),
 (9, '', '$2y$10$SwsFnur78ZwlzdKqGrWwtejAaK34WgUVvFoime.SKGIk55GIuSeK.', '2020', 'lugay', 'shao', 'weak', 'BSECE', 3, 'user@uc.com', 'student', 29, 13),
 (10, '', '$2y$10$ALnp4a5yuGN7fQBMSgoy0uLLTQDf2wtuRuN8VRR7cRGx19nFpoKSu', '3030', 'opaw', 'me', 'you', 'BSIT', 1, 'admin@uc.com', 'admin', 30, 0),
 (11, '', '$2y$10$ka64stgi3rz5TQ1iBjyP1OAoRYWeaYQFbVZRu.rYSoyfO1XjxDZZe', '1', 'abao', 'justin', 'ako', 'BSIT', 1, 'abao@gmail.com', 'student', 30, 3),
 (12, '', '$2y$10$crgTVPK1eomhHEqb9WJCnO2au.6wXs7yeZJpMhYxpnWE0S9o8OTJ6', '2', 'doblas', 'durano', 'doblas', 'BSIT', 1, 'doblas@gmail.com', 'student', 30, 1),
 (13, '', '$2y$10$xLLe.8tb1iNmqBTB80AhCO0B4OGt/6ca4p9IiJ6/NkBOFxMXBhzby', '3', 'killer', 'ako', 'budoy', 'BSIT', 1, 'me@gmail.com', 'student', 30, 4);
+=======
+(7, '', '$2y$10$/uWrtMQtN0IG5t/CqmCbKu1mvVjufaKBTYFAn43PomoHvsCXafubq', '1010', 'purisima', 'johnlouie', 'nacaytuna', 'BSIT', 3, 'purisimajohnlouie@gmail.com', 'student', 29, 10),
+(9, '', '$2y$10$SwsFnur78ZwlzdKqGrWwtejAaK34WgUVvFoime.SKGIk55GIuSeK.', '2020', 'lugay', 'shao', 'weak', 'BSECE', 3, 'user@uc.com', 'student', 29, 11),
+(10, '', '$2y$10$ALnp4a5yuGN7fQBMSgoy0uLLTQDf2wtuRuN8VRR7cRGx19nFpoKSu', '3030', 'opaw', 'me', 'you', 'BSIT', 1, 'admin@uc.com', 'admin', 30, 0);
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 -- --------------------------------------------------------
 
@@ -968,6 +1012,7 @@ ALTER TABLE `lab_schedules`
   ADD PRIMARY KEY (`id`);
 
 --
+<<<<<<< HEAD
 -- Indexes for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -990,6 +1035,13 @@ ALTER TABLE `pc_management`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_lab_pc` (`lab_name`,`pc_number`),
   ADD KEY `reservation_id` (`reservation_id`);
+=======
+-- Indexes for table `pc_availability`
+--
+ALTER TABLE `pc_availability`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `lab_pc` (`lab_name`,`pc_number`);
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 --
 -- Indexes for table `profiles`
@@ -1004,6 +1056,7 @@ ALTER TABLE `reservations`
   ADD PRIMARY KEY (`id`);
 
 --
+<<<<<<< HEAD
 -- Indexes for table `reservation_logs`
 --
 ALTER TABLE `reservation_logs`
@@ -1013,6 +1066,8 @@ ALTER TABLE `reservation_logs`
   ADD KEY `user_id` (`user_id`);
 
 --
+=======
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 -- Indexes for table `reward_transactions`
 --
 ALTER TABLE `reward_transactions`
@@ -1067,7 +1122,11 @@ ALTER TABLE `announcements`
 -- AUTO_INCREMENT for table `computer_control`
 --
 ALTER TABLE `computer_control`
+<<<<<<< HEAD
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+=======
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 --
 -- AUTO_INCREMENT for table `feedback`
@@ -1088,6 +1147,7 @@ ALTER TABLE `lab_schedules`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+<<<<<<< HEAD
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -1104,6 +1164,12 @@ ALTER TABLE `pc_availability`
 --
 ALTER TABLE `pc_management`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=301;
+=======
+-- AUTO_INCREMENT for table `pc_availability`
+--
+ALTER TABLE `pc_availability`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 --
 -- AUTO_INCREMENT for table `profiles`
@@ -1115,6 +1181,7 @@ ALTER TABLE `profiles`
 -- AUTO_INCREMENT for table `reservations`
 --
 ALTER TABLE `reservations`
+<<<<<<< HEAD
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
@@ -1122,6 +1189,9 @@ ALTER TABLE `reservations`
 --
 ALTER TABLE `reservation_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+=======
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+>>>>>>> 0b362b59c5036c0ec101a83250dc596be07607df
 
 --
 -- AUTO_INCREMENT for table `reward_transactions`
