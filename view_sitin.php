@@ -205,7 +205,14 @@ if (isset($_GET['error'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
         }
         .header a {
             color: white;
@@ -335,22 +342,26 @@ if (isset($_GET['error'])) {
 <body>
 <div class="header">
     <div>
-        <h2> College of Computer Studies Admin</h2>
+    <h1> </h1>
         <a href="admin_home.php">Home</a>
-        <a href="search_student.php">Search</a>
+        <a href="#" id="searchLink">Search</a>
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
+        <a href="reservation_logs.php">Reservation Logs</a>
         <a href="student_management.php">Student Information</a>
         <a href="lab_schedule.php">Lab Schedule</a>
         <a href="lab_resources.php">Lab Resources</a>
+        <a href="admin_notification.php">Notification</a>
+        <a href="computer_control.php">Computer Control</a>
     </div>
     <a href="logout.php" class="logout-btn">Logout</a>
 </div>
     <h1>Sit-In Records</h1>
 
+    <!-- Success/Error Messages -->
     <!-- Export Buttons -->
     <div class="export-buttons">
         <a href="export_sitin.php?format=excel" class="export-btn excel">Export Excel</a>

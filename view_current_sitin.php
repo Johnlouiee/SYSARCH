@@ -155,7 +155,6 @@ $total_pages = ceil($total_sitins / $per_page);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
         }
         .header a {
             color: white;
@@ -184,21 +183,24 @@ $total_pages = ceil($total_sitins / $per_page);
 <body>
 <div class="header">
     <div>
-        <h2> College of Computer Studies Admin</h2>
+      <h1> </h1>
         <a href="admin_home.php">Home</a>
-        <a href="search_student.php">Search</a>
+        <a href="#" id="searchLink">Search</a>
         <a href="view_current_sitin.php">Current Sit-in</a>
         <a href="view_sitin.php">Sit-in Records</a>
         <a href="sitin_reports.php">Sit-in Reports</a>
         <a href="view_feedback.php">View Feedback</a>
         <a href="view_reservation.php">View Reservation</a>
+        <a href="reservation_logs.php">Reservation Logs</a>
         <a href="student_management.php">Student Information</a>
         <a href="lab_schedule.php">Lab Schedule</a>
-        <a href="lab_usage.php">Lab Usage</a>
         <a href="lab_resources.php">Lab Resources</a>
+        <a href="admin_notification.php">Notification</a>
+        <a href="computer_control.php">Computer Control</a>
     </div>
     <a href="logout.php" class="logout-btn">Logout</a>
 </div>
+<div class="container">
     <h1>Current Sit-In</h1>
 
     <!-- Success/Error Messages -->
@@ -276,6 +278,7 @@ $total_pages = ceil($total_sitins / $per_page);
             <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>">Next</a>
         <?php endif; ?>
     </div>
+        </div>
 </body>
 </html>
 

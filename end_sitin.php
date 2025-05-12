@@ -9,13 +9,18 @@ if (!isset($_SESSION['user_info']) || $_SESSION['user_info']['role'] !== 'admin'
 
 include 'db_connect.php';
 
-// Check if sit_in_id is provided via POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['sit_in_id']) || empty(trim($_POST['sit_in_id']))) {
+// Check if sit_in_id is provided via POST or GET
+if ((!isset($_POST['sit_in_id']) && !isset($_GET['sit_in_id'])) || 
+    (isset($_POST['sit_in_id']) && empty(trim($_POST['sit_in_id'])) && 
+     isset($_GET['sit_in_id']) && empty(trim($_GET['sit_in_id'])))) {
     header("Location: view_current_sitin.php?error=Invalid%20request");
     exit();
 }
 
-$sit_in_id = mysqli_real_escape_string($conn, $_POST['sit_in_id']);
+// Get sit_in_id from either POST or GET
+$sit_in_id = isset($_POST['sit_in_id']) ? 
+             mysqli_real_escape_string($conn, $_POST['sit_in_id']) : 
+             mysqli_real_escape_string($conn, $_GET['sit_in_id']);
 
 // Check if the sit-in session exists and is active
 $check_sql = "SELECT user_id, session_start FROM sit_in_history WHERE id = ? AND session_end IS NULL";

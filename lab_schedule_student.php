@@ -68,7 +68,7 @@ $resources = $conn->query("SELECT * FROM lab_resources WHERE is_active = 1 ORDER
     </style>
 </head>
 <body>
-<<div class="header">
+<div class="header">
         <div>
             <a href="home.php">Home</a>
             <a href="reports.php">Reports</a>
